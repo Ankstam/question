@@ -87,11 +87,16 @@ function buildDocumentHTML(initialData) {
       --radius: 12px;
       --shadow: 0 4px 20px -2px rgba(0,0,0,0.05);
 
+      /* 可自定义排版变量（未设置时使用以下默认值） */
       --paper-font-size: 10.5pt;
       --paper-line-height: 1.65;
       --q-spacing: 20px;
       --rule-height: 24px;
       --diagram-width: 190px;
+      --paper-padding-v: 16mm;
+      --paper-padding-h: 15mm;
+      --option-gap: 6px;
+      --stem-option-gap: 8px;
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -210,7 +215,8 @@ function buildDocumentHTML(initialData) {
     .paper-sheet.mobile-fit .q-cell-graphic { width: 100% !important; margin-top: 10px; text-align: center; }
 
     .paper-sheet.a4-exact {
-      width: 210mm !important; min-height: 297mm; padding: 16mm 15mm;
+      width: 210mm !important; min-height: 297mm;
+      padding: var(--paper-padding-v) var(--paper-padding-h);
       border: 1px solid var(--border); box-shadow: var(--shadow);
     }
 
@@ -236,13 +242,11 @@ function buildDocumentHTML(initialData) {
       background: rgba(239, 68, 68, 0.03); border-radius: 6px;
     }
 
-    /* 超长题目允许平滑断页，防止被 break-inside: avoid 锁死导致整题消失 */
     .question-row.allow-break {
       break-inside: auto !important;
       page-break-inside: auto !important;
     }
 
-    /* 支持复杂超宽大图全幅排版 */
     .question-row.full-width-row .q-layout-box {
       flex-direction: column !important;
       align-items: center !important;
@@ -269,10 +273,10 @@ function buildDocumentHTML(initialData) {
     .q-cell-content { flex: 1 1 auto; min-width: 0; }
     .q-cell-graphic { width: var(--diagram-width); flex: 0 0 var(--diagram-width); display: flex; justify-content: center; }
 
-    .options-grid { margin: 8px 0 4px; }
-    .options-grid.cols-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .options-grid.cols-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
-    .options-grid.cols-1 { display: flex; flex-direction: column; gap: 4px; }
+    .options-grid { margin: var(--stem-option-gap) 0 4px; }
+    .options-grid.cols-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--option-gap); }
+    .options-grid.cols-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--option-gap); }
+    .options-grid.cols-1 { display: flex; flex-direction: column; gap: var(--option-gap); }
 
     .blank-space { margin-top: 6px; width: 100%; display: flex; flex-direction: column; }
     .rule-blank { width: 100%; height: var(--rule-height); border-bottom: 1px solid transparent !important; }
@@ -312,9 +316,6 @@ function buildDocumentHTML(initialData) {
     }
     .export-item.highlight { border-color: var(--primary); background: #f5f3ff; }
 
-    /* =========================================================
-       原生打印引擎严格隔离（100% 矢量无损输出）
-       ========================================================= */
     @media print {
       @page {
         size: A4 portrait;
@@ -327,18 +328,13 @@ function buildDocumentHTML(initialData) {
         }
       }
 
-      *, *::before, *::after {
-        box-sizing: border-box !important;
-      }
+      *, *::before, *::after { box-sizing: border-box !important; }
 
       html, body {
-        width: 100% !important;
-        height: auto !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        width: 100% !important; height: auto !important;
+        margin: 0 !important; padding: 0 !important;
         overflow: visible !important;
-        background: #ffffff !important;
-        color: #000000 !important;
+        background: #ffffff !important; color: #000000 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
@@ -348,109 +344,64 @@ function buildDocumentHTML(initialData) {
       }
 
       .main-body {
-        padding: 0 !important;
-        margin: 0 !important;
-        max-width: none !important;
-        width: 100% !important;
-        overflow: visible !important;
-        display: block !important;
+        padding: 0 !important; margin: 0 !important;
+        max-width: none !important; width: 100% !important;
+        overflow: visible !important; display: block !important;
       }
 
       #panel-preview {
-        display: block !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 100% !important;
-        overflow: visible !important;
+        display: block !important; margin: 0 !important; padding: 0 !important;
+        width: 100% !important; overflow: visible !important;
       }
 
       .paper-scroller {
-        display: block !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        overflow: visible !important;
-        transform: none !important;
+        display: block !important; width: 100% !important;
+        margin: 0 !important; padding: 0 !important;
+        overflow: visible !important; transform: none !important;
       }
 
       div.paper-sheet,
       div.paper-sheet.a4-exact,
       div.paper-sheet.mobile-fit {
-        width: 100% !important;
-        max-width: 100% !important;
-        min-height: auto !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        border: none !important;
-        box-shadow: none !important;
-        overflow: visible !important;
-        transform: none !important;
+        width: 100% !important; max-width: 100% !important;
+        min-height: auto !important; margin: 0 !important; padding: 0 !important;
+        border: none !important; box-shadow: none !important;
+        overflow: visible !important; transform: none !important;
       }
 
-      .paper-title {
-        margin: 0 0 8px 0 !important;
-        font-size: 1.5em !important;
-        text-align: center !important;
-      }
-
-      .paper-meta {
-        margin-bottom: 16px !important;
-        padding-bottom: 8px !important;
-      }
-
+      .paper-title { margin: 0 0 8px 0 !important; font-size: 1.5em !important; text-align: center !important; }
+      .paper-meta { margin-bottom: 16px !important; padding-bottom: 8px !important; }
       .section-title {
-        font-size: 1.05em !important;
-        font-weight: bold !important;
+        font-size: 1.05em !important; font-weight: bold !important;
         margin: 16px 0 10px !important;
-        break-after: avoid !important;
-        page-break-after: avoid !important;
+        break-after: avoid !important; page-break-after: avoid !important;
       }
 
       .question-row {
-        break-inside: avoid !important;
-        page-break-inside: avoid !important;
-        margin-bottom: var(--q-spacing) !important;
-        text-align: justify !important;
+        break-inside: avoid !important; page-break-inside: avoid !important;
+        margin-bottom: var(--q-spacing) !important; text-align: justify !important;
       }
-
       .question-row.allow-break {
-        break-inside: auto !important;
-        page-break-inside: auto !important;
+        break-inside: auto !important; page-break-inside: auto !important;
       }
-
       .question-row.full-width-row .q-layout-box {
-        flex-direction: column !important;
-        align-items: center !important;
+        flex-direction: column !important; align-items: center !important;
       }
-
       .question-row.full-width-row .q-cell-graphic {
-        width: 100% !important;
-        max-width: 100% !important;
+        width: 100% !important; max-width: 100% !important;
       }
 
       .q-layout-box {
-        display: flex !important;
-        flex-direction: row !important;
-        justify-content: space-between !important;
-        align-items: flex-start !important;
-        width: 100% !important;
-        gap: 14px !important;
+        display: flex !important; flex-direction: row !important;
+        justify-content: space-between !important; align-items: flex-start !important;
+        width: 100% !important; gap: 14px !important;
       }
-
-      .q-cell-content {
-        flex: 1 1 auto !important;
-        min-width: 0 !important;
-      }
-
+      .q-cell-content { flex: 1 1 auto !important; min-width: 0 !important; }
       .q-cell-graphic {
         width: var(--diagram-width) !important;
         flex: 0 0 var(--diagram-width) !important;
       }
-
-      .q-cell-graphic svg {
-        max-width: 100% !important;
-        height: auto !important;
-      }
+      .q-cell-graphic svg { max-width: 100% !important; height: auto !important; }
     }
   </style>
 </head>
@@ -519,7 +470,10 @@ function buildDocumentHTML(initialData) {
       </div>
 
       <div class="card">
-        <div class="card-title">字号与版面微调</div>
+        <div class="card-title">
+          <span>字号与版面微调（未调整则使用默认）</span>
+          <button class="btn-sm" onclick="resetLayoutToDefault()" style="font-size:11px;">↺ 恢复默认排版</button>
+        </div>
         <div class="action-row" style="margin-bottom: 12px;">
           <button class="btn-sm" id="btn-size-9" onclick="setQuickFontSize(9, 'btn-size-9')">小五 (9pt 紧凑)</button>
           <button class="btn-sm active-preset" id="btn-size-105" onclick="setQuickFontSize(10.5, 'btn-size-105')">五号 (10.5pt 国标)</button>
@@ -532,17 +486,40 @@ function buildDocumentHTML(initialData) {
             <input type="range" id="input-range-fontsize" min="8.5" max="15" step="0.5" value="10.5" oninput="updateStyleVar('--paper-font-size', this.value + 'pt', 'val-font-size')">
           </div>
           <div class="slider-item">
+            <label>行高: <span id="val-line-height">1.65</span></label>
+            <input type="range" id="input-range-lineheight" min="1.3" max="2.2" step="0.05" value="1.65" oninput="updateStyleVar('--paper-line-height', this.value, 'val-line-height')">
+          </div>
+          <div class="slider-item">
             <label>大题题目间距: <span id="val-q-spacing">20px</span></label>
-            <input type="range" min="10" max="45" value="20" oninput="updateStyleVar('--q-spacing', this.value + 'px', 'val-q-spacing')">
+            <input type="range" id="input-range-qspacing" min="10" max="45" value="20" oninput="updateStyleVar('--q-spacing', this.value + 'px', 'val-q-spacing')">
           </div>
           <div class="slider-item">
             <label>留白单行高度: <span id="val-rule-height">24px</span></label>
-            <input type="range" min="16" max="36" value="24" oninput="updateStyleVar('--rule-height', this.value + 'px', 'val-rule-height')">
+            <input type="range" id="input-range-ruleheight" min="16" max="36" value="24" oninput="updateStyleVar('--rule-height', this.value + 'px', 'val-rule-height')">
           </div>
           <div class="slider-item">
             <label>右侧图栏宽度: <span id="val-diag-width">190px</span></label>
-            <input type="range" min="140" max="260" value="190" oninput="updateStyleVar('--diagram-width', this.value + 'px', 'val-diag-width')">
+            <input type="range" id="input-range-diagwidth" min="140" max="260" value="190" oninput="updateStyleVar('--diagram-width', this.value + 'px', 'val-diag-width')">
           </div>
+          <div class="slider-item">
+            <label>题干与选项间距: <span id="val-stem-option-gap">8px</span></label>
+            <input type="range" id="input-range-stemoption" min="4" max="16" value="8" oninput="updateStyleVar('--stem-option-gap', this.value + 'px', 'val-stem-option-gap')">
+          </div>
+          <div class="slider-item">
+            <label>选项内部间距: <span id="val-option-gap">6px</span></label>
+            <input type="range" id="input-range-optiongap" min="2" max="14" value="6" oninput="updateStyleVar('--option-gap', this.value + 'px', 'val-option-gap')">
+          </div>
+          <div class="slider-item">
+            <label>A4 上下边距: <span id="val-padding-v">16mm</span></label>
+            <input type="range" id="input-range-paddingv" min="10" max="25" value="16" oninput="updateStyleVar('--paper-padding-v', this.value + 'mm', 'val-padding-v')">
+          </div>
+          <div class="slider-item">
+            <label>A4 左右边距: <span id="val-padding-h">15mm</span></label>
+            <input type="range" id="input-range-paddingh" min="10" max="25" value="15" oninput="updateStyleVar('--paper-padding-h', this.value + 'mm', 'val-padding-h')">
+          </div>
+        </div>
+        <div style="margin-top:10px; font-size:11px; color:var(--text-sub);">
+          提示：所有滑块未调整时自动使用默认值。排版设置会自动保存到本地浏览器。
         </div>
       </div>
 
@@ -586,7 +563,7 @@ function buildDocumentHTML(initialData) {
     <button class="btn btn-primary" onclick="openExportModal()">📥 导出 / 打印试卷</button>
   </div>
 
-  <!-- 导出选项面板 Action Sheet -->
+  <!-- 导出选项面板 -->
   <div class="modal-overlay" id="export-modal" onclick="closeExportModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
       <div class="modal-header">试卷与错题本导出中心</div>
@@ -643,8 +620,22 @@ function buildDocumentHTML(initialData) {
     var mistakeQuestionIds = new Set();
     var isFilteringMistakes = false;
 
+    // 默认排版配置
+    var DEFAULT_LAYOUT = {
+      '--paper-font-size': '10.5pt',
+      '--paper-line-height': '1.65',
+      '--q-spacing': '20px',
+      '--rule-height': '24px',
+      '--diagram-width': '190px',
+      '--stem-option-gap': '8px',
+      '--option-gap': '6px',
+      '--paper-padding-v': '16mm',
+      '--paper-padding-h': '15mm'
+    };
+
     window.addEventListener('DOMContentLoaded', function() {
       loadSavedAISettings();
+      loadSavedLayout();
       renderPaperFromTextarea();
 
       var jsonEl = document.getElementById('paper-json');
@@ -709,6 +700,89 @@ function buildDocumentHTML(initialData) {
       }
     }
 
+    // 加载已保存的排版设置（未保存则使用默认）
+    function loadSavedLayout() {
+      try {
+        var saved = localStorage.getItem('paper_layout');
+        if (saved) {
+          var layout = JSON.parse(saved);
+          Object.keys(layout).forEach(function(key) {
+            if (DEFAULT_LAYOUT[key] !== undefined) {
+              document.documentElement.style.setProperty(key, layout[key]);
+              updateLabelFromVar(key, layout[key]);
+            }
+          });
+          // 同步滑块数值
+          syncSlidersFromVars();
+        }
+      } catch (e) {}
+    }
+
+    function saveCurrentLayout() {
+      try {
+        var layout = {};
+        Object.keys(DEFAULT_LAYOUT).forEach(function(key) {
+          layout[key] = getComputedStyle(document.documentElement).getPropertyValue(key).trim() || DEFAULT_LAYOUT[key];
+        });
+        localStorage.setItem('paper_layout', JSON.stringify(layout));
+      } catch (e) {}
+    }
+
+    function updateLabelFromVar(varName, value) {
+      var map = {
+        '--paper-font-size': 'val-font-size',
+        '--paper-line-height': 'val-line-height',
+        '--q-spacing': 'val-q-spacing',
+        '--rule-height': 'val-rule-height',
+        '--diagram-width': 'val-diag-width',
+        '--stem-option-gap': 'val-stem-option-gap',
+        '--option-gap': 'val-option-gap',
+        '--paper-padding-v': 'val-padding-v',
+        '--paper-padding-h': 'val-padding-h'
+      };
+      var labelId = map[varName];
+      if (labelId) {
+        var el = document.getElementById(labelId);
+        if (el) el.innerText = value;
+      }
+    }
+
+    function syncSlidersFromVars() {
+      var fs = getComputedStyle(document.documentElement).getPropertyValue('--paper-font-size').trim();
+      var lh = getComputedStyle(document.documentElement).getPropertyValue('--paper-line-height').trim();
+      var qs = getComputedStyle(document.documentElement).getPropertyValue('--q-spacing').trim();
+      var rh = getComputedStyle(document.documentElement).getPropertyValue('--rule-height').trim();
+      var dw = getComputedStyle(document.documentElement).getPropertyValue('--diagram-width').trim();
+      var sog = getComputedStyle(document.documentElement).getPropertyValue('--stem-option-gap').trim();
+      var og = getComputedStyle(document.documentElement).getPropertyValue('--option-gap').trim();
+      var pv = getComputedStyle(document.documentElement).getPropertyValue('--paper-padding-v').trim();
+      var ph = getComputedStyle(document.documentElement).getPropertyValue('--paper-padding-h').trim();
+
+      if (document.getElementById('input-range-fontsize')) document.getElementById('input-range-fontsize').value = parseFloat(fs) || 10.5;
+      if (document.getElementById('input-range-lineheight')) document.getElementById('input-range-lineheight').value = parseFloat(lh) || 1.65;
+      if (document.getElementById('input-range-qspacing')) document.getElementById('input-range-qspacing').value = parseInt(qs) || 20;
+      if (document.getElementById('input-range-ruleheight')) document.getElementById('input-range-ruleheight').value = parseInt(rh) || 24;
+      if (document.getElementById('input-range-diagwidth')) document.getElementById('input-range-diagwidth').value = parseInt(dw) || 190;
+      if (document.getElementById('input-range-stemoption')) document.getElementById('input-range-stemoption').value = parseInt(sog) || 8;
+      if (document.getElementById('input-range-optiongap')) document.getElementById('input-range-optiongap').value = parseInt(og) || 6;
+      if (document.getElementById('input-range-paddingv')) document.getElementById('input-range-paddingv').value = parseInt(pv) || 16;
+      if (document.getElementById('input-range-paddingh')) document.getElementById('input-range-paddingh').value = parseInt(ph) || 15;
+    }
+
+    function resetLayoutToDefault() {
+      Object.keys(DEFAULT_LAYOUT).forEach(function(key) {
+        document.documentElement.style.setProperty(key, DEFAULT_LAYOUT[key]);
+        updateLabelFromVar(key, DEFAULT_LAYOUT[key]);
+      });
+      // 重置快捷字号按钮状态
+      document.querySelectorAll('.action-row .btn-sm').forEach(function(b) { b.classList.remove('active-preset'); });
+      var btn105 = document.getElementById('btn-size-105');
+      if (btn105) btn105.classList.add('active-preset');
+      syncSlidersFromVars();
+      saveCurrentLayout();
+      alert("✅ 已恢复默认排版设置");
+    }
+
     async function triggerAIGeneration(type) {
       var baseUrl = document.getElementById('ai-base-url').value.trim();
       var apiKey = document.getElementById('ai-api-key').value.trim();
@@ -719,7 +793,6 @@ function buildDocumentHTML(initialData) {
         return;
       }
 
-      // 固化物理/化学微图元标准规范，杜绝大模型几何幻觉
       var systemPrompt = '你是一名顶尖的高中数理化试卷出题专家。必须严格输出符合规范的纯 JSON 格式：' +
         '{"paper_title": "试卷名", "meta": {"subject": "科目", "time": "120分钟", "total_score": 100}, ' +
         '"sections": [{"title": "大题标题", "questions": [{"id": 1, "score": 10, "stem": "题干", ' +
@@ -864,7 +937,11 @@ function buildDocumentHTML(initialData) {
 
     function updateStyleVar(varName, value, labelId) {
       document.documentElement.style.setProperty(varName, value);
-      if (labelId) document.getElementById(labelId).innerText = value;
+      if (labelId) {
+        var el = document.getElementById(labelId);
+        if (el) el.innerText = value;
+      }
+      saveCurrentLayout();
     }
 
     function getResolvedFileName(extension, isMistakeOnly) {
@@ -915,7 +992,6 @@ function buildDocumentHTML(initialData) {
       }
     }
 
-    // 针对 LaTeX 宏与 ASCII 控制字符（\\f, \\t, \\r, \\b, \\n）进行前置词法修复
     function sanitizeLatexJSON(rawStr) {
       var bs = String.fromCharCode(92);
       var out = "";
@@ -932,7 +1008,6 @@ function buildDocumentHTML(initialData) {
           } else if (next === 'u' && /^[0-9a-fA-F]{4}$/.test(rawStr.substr(i + 2, 4))) {
             out += bs;
           } else if (/^[a-zA-Z]/.test(next)) {
-            // LaTeX 宏命令强制转为双反斜杠
             out += bs + bs;
           } else {
             out += bs + bs;
@@ -967,7 +1042,6 @@ function buildDocumentHTML(initialData) {
       return 'cols-1';
     }
 
-    // 全面收敛为“原生矢量 raw_svg + 空间透视 wireframe_3d”双轨统一引擎，同时保留旧引擎兼容
     function renderClientDiagram(diagram) {
       if (!diagram) return '';
       if (diagram.engine === "raw_svg" || diagram.svg) return diagram.svg;
@@ -1010,7 +1084,6 @@ function buildDocumentHTML(initialData) {
         return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' + dLines + lines + texts + '</svg>';
       }
 
-      // 兼容旧引擎
       if (diagram.engine === "func_2d") {
         return '<svg width="190" height="130" viewBox="0 0 190 130"><line x1="15" y1="105" x2="175" y2="105" stroke="#000" stroke-width="1.2"/><line x1="35" y1="120" x2="35" y2="15" stroke="#000" stroke-width="1.2"/><text x="175" y="115" font-size="10">x</text><text x="25" y="20" font-size="10">y</text><path d="M 35 95 Q 70 15, 110 65 T 165 20" fill="none" stroke="#4f46e5" stroke-width="1.5"/><line x1="110" y1="105" x2="110" y2="65" stroke="#64748b" stroke-dasharray="3,2"/><text x="105" y="118" font-size="9">x₁</text></svg>';
       }
@@ -1037,6 +1110,19 @@ function buildDocumentHTML(initialData) {
         return false;
       }
 
+      // 如果 JSON 中带有 layout 字段，则优先应用
+      if (data.layout && typeof data.layout === 'object') {
+        Object.keys(data.layout).forEach(function(key) {
+          var cssKey = key.startsWith('--') ? key : '--' + key;
+          if (DEFAULT_LAYOUT[cssKey] !== undefined) {
+            document.documentElement.style.setProperty(cssKey, data.layout[key]);
+            updateLabelFromVar(cssKey, data.layout[key]);
+          }
+        });
+        syncSlidersFromVars();
+        saveCurrentLayout();
+      }
+
       var container = document.getElementById('paper-mount-point');
       var html = '';
 
@@ -1052,7 +1138,6 @@ function buildDocumentHTML(initialData) {
       (data.sections || []).forEach(function(sec) {
         html += '<div class="section-title">' + sec.title + '</div>';
         (sec.questions || []).forEach(function(q) {
-          // 检查是否全幅显示或长留白题，动态挂载防截断类
           var isFullWidth = !!(q.is_full_width || (q.diagram && q.diagram.is_full_width));
           var isLong = !!(q.blank_lines && q.blank_lines >= 8);
           var rowClass = 'question-row' + (isFullWidth ? ' full-width-row' : '') + (isLong ? ' allow-break' : '');
@@ -1120,7 +1205,6 @@ function buildDocumentHTML(initialData) {
       }, 300);
     }
 
-    // 核心原生打印管线：引入 document.fonts.ready 守护，杜绝公式缺字与发虚
     async function triggerChromePrint(mistakeOnly) {
       closeExportModal();
 
@@ -1146,7 +1230,6 @@ function buildDocumentHTML(initialData) {
         });
       }
 
-      // 关键：等待 KaTeX 数学矢量字库全部加载解码完毕并渲染一帧
       if (document.fonts && document.fonts.ready) {
         await document.fonts.ready;
       }
@@ -1258,7 +1341,7 @@ function buildDocumentHTML(initialData) {
 </html>`;
 }
 
-// 预设数据：30道全学科高强度测试卷（图元全面收敛至 raw_svg 与 wireframe_3d 规范）
+// 预设数据保持与之前一致（完整 30 题）
 const PRESET_30_EXAM = {
   "paper_title": "2026年全学科综合能力全真高强度测试卷",
   "meta": { "subject": "全科综合", "time": "180分钟", "total_score": 300 },
