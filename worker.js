@@ -70,7 +70,6 @@ function buildDocumentHTML(initialData) {
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/mhchem.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
     :root {
@@ -226,12 +225,31 @@ function buildDocumentHTML(initialData) {
 
     .question-row {
       position: relative;
-      break-inside: avoid !important; page-break-inside: avoid !important;
-      margin-bottom: var(--q-spacing); text-align: justify;
+      break-inside: avoid !important;
+      page-break-inside: avoid !important;
+      margin-bottom: var(--q-spacing);
+      text-align: justify;
       transition: background 0.2s;
     }
     .question-row.is-mistake {
       background: rgba(239, 68, 68, 0.03); border-radius: 6px;
+    }
+
+    /* 优化项：超长题目允许平滑断页，防止被 break-inside: avoid 锁死导致整题消失 */
+    .question-row.allow-break {
+      break-inside: auto !important;
+      page-break-inside: auto !important;
+    }
+
+    /* 优化项：支持复杂超宽大图全幅排版 */
+    .question-row.full-width-row .q-layout-box {
+      flex-direction: column !important;
+      align-items: center !important;
+    }
+    .question-row.full-width-row .q-cell-graphic {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin-top: 8px !important;
     }
 
     .mistake-btn {
@@ -294,7 +312,7 @@ function buildDocumentHTML(initialData) {
     .export-item.highlight { border-color: var(--primary); background: #f5f3ff; }
 
     /* =========================================================
-       打印排版根基重构（彻底解决左侧截断、缺字与模糊）
+       原生打印引擎严格隔离（100% 矢量无损输出）
        ========================================================= */
     @media print {
       @page {
@@ -324,12 +342,10 @@ function buildDocumentHTML(initialData) {
         print-color-adjust: exact !important;
       }
 
-      /* 隐藏所有界面控件 */
       .app-header, .bottom-bar, #panel-ai, #panel-edit, .preview-bar, .modal-overlay, .mistake-btn {
         display: none !important;
       }
 
-      /* 展开内容容器，解除移动端固定宽度与滚动盒模型的限制 */
       .main-body {
         padding: 0 !important;
         margin: 0 !important;
@@ -356,8 +372,6 @@ function buildDocumentHTML(initialData) {
         transform: none !important;
       }
 
-      /* 高特异性选择器：彻底废除 210mm 屏幕宽度与内边距叠加，
-         让内容完美占满 @page 的 180mm 打印区，左右边距严格为 15mm，绝不外溢切字 */
       div.paper-sheet,
       div.paper-sheet.a4-exact,
       div.paper-sheet.mobile-fit {
@@ -396,6 +410,21 @@ function buildDocumentHTML(initialData) {
         page-break-inside: avoid !important;
         margin-bottom: var(--q-spacing) !important;
         text-align: justify !important;
+      }
+
+      .question-row.allow-break {
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+      }
+
+      .question-row.full-width-row .q-layout-box {
+        flex-direction: column !important;
+        align-items: center !important;
+      }
+
+      .question-row.full-width-row .q-cell-graphic {
+        width: 100% !important;
+        max-width: 100% !important;
       }
 
       .q-layout-box {
@@ -519,7 +548,7 @@ function buildDocumentHTML(initialData) {
       <div class="card">
         <div class="card-title">
           <span>试卷 JSON 数据协议</span>
-          <span style="font-size: 10px; color: var(--text-sub);">双斜杠容错</span>
+          <span style="font-size: 10px; color: var(--text-sub);">内置全自动词法修复</span>
         </div>
         <div class="action-row">
           <button class="btn-sm" onclick="pasteFromClipboard()">📋 剪贴板粘贴</button>
@@ -556,29 +585,22 @@ function buildDocumentHTML(initialData) {
     <button class="btn btn-primary" onclick="openExportModal()">📥 导出 / 打印试卷</button>
   </div>
 
-  <!-- 导出选项面板 Action Sheet -->
+  <!-- 导出选项面板 Action Sheet（完全收敛至高精矢量管线，杜绝 Canvas 位图硬画） -->
   <div class="modal-overlay" id="export-modal" onclick="closeExportModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
       <div class="modal-header">试卷与错题本导出中心</div>
       <div class="export-grid">
         <button class="export-item highlight" onclick="triggerChromePrint(false)">
           <div>
-            <div style="color:var(--primary); font-weight:700;">🖨️ Chrome 标准打印 / 另存为 PDF (整卷)</div>
-            <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">原生矢量高精无损，排版规范</div>
-          </div>
-          <span>➔</span>
-        </button>
-        <button class="export-item" style="border-color: #fca5a5; background: #fff1f2;" onclick="exportDirectPDF(true)">
-          <div>
-            <div style="color:var(--danger); font-weight:700;">📑 单纯错题直接下载 PDF 文件 (.pdf)</div>
-            <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">仅提取错题一键生成专属错题本</div>
+            <div style="color:var(--primary); font-weight:700;">🖨️ 系统原生高精矢量打印 / 另存为 PDF (整卷)</div>
+            <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">首选推荐：100% 矢量无损文本、公式锐利、绝不丢字</div>
           </div>
           <span>➔</span>
         </button>
         <button class="export-item" style="border-color: #fca5a5; background: #fff1f2;" onclick="triggerChromePrint(true)">
           <div>
-            <div style="color:var(--danger); font-weight:700;">🖨️ 错题本 Chrome 打印 / 另存为 PDF</div>
-            <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">仅打印勾选的错题</div>
+            <div style="color:var(--danger); font-weight:700;">📑 专属错题集矢量打印 / 另存为 PDF (仅错题)</div>
+            <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">仅提取勾选的错题，A4 高清矢量直出</div>
           </div>
           <span>➔</span>
         </button>
@@ -586,13 +608,6 @@ function buildDocumentHTML(initialData) {
           <div>
             <div style="font-weight:700;">🎯 导出错题给 AI 针对训练</div>
             <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">将错题参数自动填入 AI 工坊进行变式训练</div>
-          </div>
-          <span>➔</span>
-        </button>
-        <button class="export-item" onclick="exportDirectPDF(false)">
-          <div>
-            <div>📑 整卷直接下载 PDF 文件 (.pdf)</div>
-            <div style="font-size:11px; color:var(--text-sub);">免驱动客户端快速直出</div>
           </div>
           <span>➔</span>
         </button>
@@ -689,11 +704,16 @@ function buildDocumentHTML(initialData) {
         return;
       }
 
+      // 固化物理/化学微图元标准规范，杜绝大模型几何幻觉
       var systemPrompt = '你是一名顶尖的高中数理化试卷出题专家。必须严格输出符合规范的纯 JSON 格式：' +
         '{"paper_title": "试卷名", "meta": {"subject": "科目", "time": "120分钟", "total_score": 100}, ' +
         '"sections": [{"title": "大题标题", "questions": [{"id": 1, "score": 10, "stem": "题干", ' +
-        '"options": ["A", "B", "C", "D"], "blank_lines": 6, "diagram": null}]}]}. ' +
-        '注意：所有公式必须包裹在 $...$ 内且反斜杠双重转义（如 \\\\mu, \\\\alpha, \\\\sqrt{2}）。大题 blank_lines 为 6。';
+        '"options": ["A", "B", "C", "D"], "blank_lines": 6, "is_full_width": false, "diagram": null}]}]}. ' +
+        '核心图元规范（重要）：' +
+        '1. 公式与变量必须包裹在 $...$ 内且反斜杠严格双重转义（如 \\\\frac, \\\\theta, \\\\mu, \\\\sqrt{2}），化学式包裹在 $\\\\ce{...}$ 内；' +
+        '2. 配图平面图统一使用 raw_svg（viewBox="0 0 190 130"），立体多面体与晶胞使用 wireframe_3d；' +
+        '3. 若为复杂长电路或多步骤工业流程图，设置 is_full_width 为 true 全幅居中；' +
+        '4. 物理电学滑动变阻器需画出滑片P与上金属杆、下电阻丝三个端点；磁场阵列需间距规整；弹簧使用规整锯齿折线；玻尔能级线严格按非线性变密排布。大题 blank_lines 设置为 6。';
 
       var userMsg = document.getElementById('ai-user-prompt').value.trim();
 
@@ -880,32 +900,43 @@ function buildDocumentHTML(initialData) {
       }
     }
 
+    // 针对 LaTeX 宏与 ASCII 控制字符（\f, \t, \r, \b, \n）进行前置词法修复
+    function sanitizeLatexJSON(rawStr) {
+      var bs = String.fromCharCode(92);
+      var out = "";
+      for (var i = 0; i < rawStr.length; i++) {
+        var ch = rawStr[i];
+        if (ch === bs) {
+          var next = rawStr[i + 1] || "";
+          if (next === bs) {
+            out += bs + bs;
+            i++;
+          } else if (next === '"' || next === '/') {
+            out += bs + next;
+            i++;
+          } else if (next === 'u' && /^[0-9a-fA-F]{4}$/.test(rawStr.substr(i + 2, 4))) {
+            out += bs;
+          } else if (/^[a-zA-Z]/.test(next)) {
+            // LaTeX 宏命令（如 \frac, \text, \theta, \rho, \beta, \nu 等）
+            // 强制转为双反斜杠，杜绝被系统吞噬为 FormFeed, Tab, Return, Backspace, Newline 控制符
+            out += bs + bs;
+          } else {
+            out += bs + bs;
+          }
+        } else {
+          out += ch;
+        }
+      }
+      return out;
+    }
+
     function parseJSONWithTolerance(rawStr) {
       try {
-        return JSON.parse(rawStr);
+        var sanitized = sanitizeLatexJSON(rawStr);
+        return JSON.parse(sanitized);
       } catch (e1) {
         try {
-          var bs = String.fromCharCode(92);
-          var out = "";
-          for (var i = 0; i < rawStr.length; i++) {
-            var ch = rawStr[i];
-            if (ch === bs) {
-              var next = rawStr[i + 1] || "";
-              if (next === bs) {
-                out += bs + bs;
-                i++;
-              } else if ('"/bfnrt'.indexOf(next) !== -1) {
-                out += bs;
-              } else if (next === 'u' && /^[0-9a-fA-F]{4}$/.test(rawStr.substr(i + 2, 4))) {
-                out += bs;
-              } else {
-                out += bs + bs;
-              }
-            } else {
-              out += ch;
-            }
-          }
-          return JSON.parse(out);
+          return JSON.parse(rawStr);
         } catch (e2) {
           throw e1;
         }
@@ -922,6 +953,7 @@ function buildDocumentHTML(initialData) {
       return 'cols-1';
     }
 
+    // 全面收敛为“原生矢量 raw_svg + 空间透视 wireframe_3d”双轨统一引擎，彻底移除冗余微引擎
     function renderClientDiagram(diagram) {
       if (!diagram) return '';
       if (diagram.engine === "raw_svg" || diagram.svg) return diagram.svg;
@@ -964,18 +996,6 @@ function buildDocumentHTML(initialData) {
         return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' + dLines + lines + texts + '</svg>';
       }
 
-      if (diagram.engine === "func_2d") {
-        return '<svg width="190" height="130" viewBox="0 0 190 130"><line x1="15" y1="105" x2="175" y2="105" stroke="#000" stroke-width="1.2"/><line x1="35" y1="120" x2="35" y2="15" stroke="#000" stroke-width="1.2"/><text x="175" y="115" font-size="10">x</text><text x="25" y="20" font-size="10">y</text><path d="M 35 95 Q 70 15, 110 65 T 165 20" fill="none" stroke="#4f46e5" stroke-width="1.5"/><line x1="110" y1="105" x2="110" y2="65" stroke="#64748b" stroke-dasharray="3,2"/><text x="105" y="118" font-size="9">x₁</text></svg>';
-      }
-
-      if (diagram.engine === "geography_2d") {
-        return '<svg width="180" height="120" viewBox="0 0 180 120"><ellipse cx="90" cy="60" rx="60" ry="40" fill="none" stroke="#64748b" stroke-width="1.2"/><ellipse cx="86" cy="58" rx="42" ry="28" fill="none" stroke="#64748b" stroke-width="1.2"/><ellipse cx="82" cy="55" rx="25" ry="16" fill="none" stroke="#64748b" stroke-width="1.2"/><circle cx="80" cy="52" r="2.5" fill="#000"/><text x="85" y="55" font-size="8" font-weight="bold">▲850m</text></svg>';
-      }
-
-      if (diagram.engine === "ielts_chart") {
-        return '<svg width="180" height="120" viewBox="0 0 180 120"><line x1="25" y1="95" x2="165" y2="95" stroke="#000" stroke-width="1"/><line x1="25" y1="95" x2="25" y2="15" stroke="#000" stroke-width="1"/><rect x="40" y="35" width="15" height="60" fill="#4f46e5"/><rect x="60" y="50" width="15" height="45" fill="#93c5fd"/><rect x="100" y="20" width="15" height="75" fill="#4f46e5"/><rect x="120" y="40" width="15" height="55" fill="#93c5fd"/><text x="43" y="110" font-size="8">2010</text><text x="103" y="110" font-size="8">2030</text><text x="8" y="22" font-size="8">%</text></svg>';
-      }
-
       return '';
     }
 
@@ -1007,7 +1027,12 @@ function buildDocumentHTML(initialData) {
       (data.sections || []).forEach(function(sec) {
         html += '<div class="section-title">' + sec.title + '</div>';
         (sec.questions || []).forEach(function(q) {
-          html += '<div class="question-row" data-qid="' + q.id + '">';
+          // 检查是否全幅显示或长留白题，动态挂载防截断类
+          var isFullWidth = !!(q.is_full_width || (q.diagram && q.diagram.is_full_width));
+          var isLong = !!(q.blank_lines && q.blank_lines >= 8);
+          var rowClass = 'question-row' + (isFullWidth ? ' full-width-row' : '') + (isLong ? ' allow-break' : '');
+
+          html += '<div class="' + rowClass + '" data-qid="' + q.id + '">';
           html += '  <button class="mistake-btn" onclick="toggleMistake(' + q.id + ')">标为错题</button>';
           html += '  <div class="q-layout-box">';
           html += '    <div class="q-cell-content">';
@@ -1070,11 +1095,10 @@ function buildDocumentHTML(initialData) {
       }, 300);
     }
 
-    // 核心原生打印：清除横向滚动偏移，杜绝双重页边距
-    function triggerChromePrint(mistakeOnly) {
+    // 核心原生打印管线：引入 document.fonts.ready 守护，杜绝公式缺字与发虚
+    async function triggerChromePrint(mistakeOnly) {
       closeExportModal();
 
-      // 重置移动端滚动偏移，防止截断左边缘
       var scroller = document.querySelector('.paper-scroller');
       if (scroller) {
         scroller.scrollLeft = 0;
@@ -1097,63 +1121,18 @@ function buildDocumentHTML(initialData) {
         });
       }
 
+      // 关键：等待 KaTeX 数学矢量字库全部加载解码完毕并渲染一帧，杜绝符号发虚与根号截断
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+      await new Promise(function(resolve) { requestAnimationFrame(resolve); });
+
       setTimeout(function() {
         window.print();
         document.querySelectorAll('.question-row').forEach(function(row) {
           row.style.display = 'block';
         });
-      }, 150);
-    }
-
-    async function exportDirectPDF(mistakeOnly) {
-      closeExportModal();
-      setPreviewMode('a4-exact');
-
-      if (mistakeOnly) {
-        if (mistakeQuestionIds.size === 0) {
-          alert("尚未勾选任何错题！请先在题干右上角勾选‘标为错题’。");
-          return;
-        }
-        document.querySelectorAll('.question-row').forEach(function(row) {
-          var id = parseInt(row.getAttribute('data-qid'));
-          row.style.display = mistakeQuestionIds.has(id) ? 'block' : 'none';
-        });
-      } else {
-        document.querySelectorAll('.question-row').forEach(function(row) {
-          row.style.display = 'block';
-        });
-      }
-
-      if (document.fonts) await document.fonts.ready;
-
-      var element = document.getElementById('paper-mount-point');
-      var filename = getResolvedFileName('pdf', !!mistakeOnly);
-
-      var opt = {
-        margin: [15, 14, 15, 14],
-        filename: filename,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', width: 794, windowWidth: 794 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'], avoid: ['.question-row', '.section-title'] }
-      };
-
-      if (window.html2pdf) {
-        window.html2pdf().set(opt).from(element).toPdf().get('pdf').then(function(pdf) {
-          var totalPages = pdf.internal.getNumberOfPages();
-          for (var i = 1; i <= totalPages; i++) {
-            pdf.setPage(i);
-            pdf.setFontSize(9.5);
-            pdf.setTextColor(80, 80, 80);
-            var text = '— ' + i + ' / ' + totalPages + ' —';
-            pdf.text(text, pdf.internal.pageSize.getWidth() / 2, pdf.internal.pageSize.getHeight() - 8, { align: 'center' });
-          }
-        }).save().then(function() {
-          document.querySelectorAll('.question-row').forEach(function(row) {
-            row.style.display = 'block';
-          });
-        });
-      }
+      }, 50);
     }
 
     function exportStandaloneHTML() {
@@ -1203,7 +1182,7 @@ function buildDocumentHTML(initialData) {
 </html>`;
 }
 
-// 预设数据：30道全学科高强度测试卷（方案 B：纯白留白）
+// 预设数据：30道全学科高强度测试卷（图元全面收敛至 raw_svg 与 wireframe_3d 规范）
 const PRESET_30_EXAM = {
   "paper_title": "2026年全学科综合能力全真高强度测试卷",
   "meta": { "subject": "全科综合", "time": "180分钟", "total_score": 300 },
@@ -1227,7 +1206,10 @@ const PRESET_30_EXAM = {
           "id": 3, "score": 5,
           "stem": "函数 $f(x) = x^3 - 3x^2 + ax + 1$ 在点 $(1, f(1))$ 处的切线与直线 $y = -2x + 5$ 垂直，其导函数零点分布如右图所示。则极值点 $x_1$ 对应的极小值为（  ）",
           "options": ["$-2$", "$-1$", "$0$", "$2$"],
-          "diagram": { "engine": "func_2d" },
+          "diagram": {
+            "engine": "raw_svg",
+            "svg": "<svg width='190' height='130' viewBox='0 0 190 130'><line x1='15' y1='105' x2='175' y2='105' stroke='#000' stroke-width='1.2'/><line x1='35' y1='120' x2='35' y2='15' stroke='#000' stroke-width='1.2'/><text x='175' y='115' font-size='10'>x</text><text x='25' y='20' font-size='10'>y</text><path d='M 35 95 Q 70 15, 110 65 T 165 20' fill='none' stroke='#4f46e5' stroke-width='1.5'/><line x1='110' y1='105' x2='110' y2='65' stroke='#64748b' stroke-dasharray='3,2'/><text x='105' y='118' font-size='9'>x₁</text></svg>"
+          },
           "blank_lines": 0
         },
         {
@@ -1414,7 +1396,10 @@ const PRESET_30_EXAM = {
           "id": 20, "score": 10,
           "stem": "读右侧某区域等高线地形图，图中河流由西向东流经峡谷。(1) 指出图示区域内陡崖的最大相对高度范围；(2) 若当地规划在图示鞍部处修建公路隧道，请从地质与防灾角度论述其选线合理性。",
           "blank_lines": 5,
-          "diagram": { "engine": "geography_2d" }
+          "diagram": {
+            "engine": "raw_svg",
+            "svg": "<svg width='180' height='120' viewBox='0 0 180 120'><ellipse cx='90' cy='60' rx='60' ry='40' fill='none' stroke='#64748b' stroke-width='1.2'/><ellipse cx='86' cy='58' rx='42' ry='28' fill='none' stroke='#64748b' stroke-width='1.2'/><ellipse cx='82' cy='55' rx='25' ry='16' fill='none' stroke='#64748b' stroke-width='1.2'/><circle cx='80' cy='52' r='2.5' fill='#000'/><text x='85' y='55' font-size='8' font-weight='bold'>▲850m</text></svg>"
+          }
         },
         {
           "id": 21, "score": 10,
@@ -1452,7 +1437,10 @@ const PRESET_30_EXAM = {
           "id": 24, "score": 15,
           "stem": "<b>IELTS Academic Writing Task 1:</b> The chart below gives information about global energy consumption by source in 2010 and projected data for 2030. Summarise the information by selecting and reporting the main features, and make comparisons where relevant. (Write at least 150 words)",
           "blank_lines": 7,
-          "diagram": { "engine": "ielts_chart" }
+          "diagram": {
+            "engine": "raw_svg",
+            "svg": "<svg width='180' height='120' viewBox='0 0 180 120'><line x1='25' y1='95' x2='165' y2='95' stroke='#000' stroke-width='1'/><line x1='25' y1='95' x2='25' y2='15' stroke='#000' stroke-width='1'/><rect x='40' y='35' width='15' height='60' fill='#4f46e5'/><rect x='60' y='50' width='15' height='45' fill='#93c5fd'/><rect x='100' y='20' width='15' height='75' fill='#4f46e5'/><rect x='120' y='40' width='15' height='55' fill='#93c5fd'/><text x='43' y='110' font-size='8'>2010</text><text x='103' y='110' font-size='8'>2030</text><text x='8' y='22' font-size='8'>%</text></svg>"
+          }
         },
         {
           "id": 25, "score": 10,
@@ -1466,8 +1454,7 @@ const PRESET_30_EXAM = {
         {
           "id": 26, "score": 8,
           "stem": "Read the passage below and fill in each blank with ONE proper word, or the correct form of the given word:<br>Modern deep learning architectures, particularly Transformers, ________ (revolutionize) the field of natural language understanding. By relying entirely on self-attention mechanisms, they eliminate recurrence ________ (complete), allowing unprecedented degrees of parallel computing during large-scale pre-training.",
-          "blank_lines": 4,
-          "diagram": null
+          "blank_lines": 4, "diagram": null
         },
         {
           "id": 27, "score": 7,
@@ -1487,7 +1474,7 @@ const PRESET_30_EXAM = {
       "questions": [
         {
           "id": 28, "score": 6,
-          "stem": "次の文の言葉の読み方として最もよいものを、1・2・3・4から一つ選びなさい。<br>新規事業の立ち上げをめぐって、役員会の議論は<ruby>紛糾<rt>ふんきゅう</rt></ruby>し、最終的な意思決定を【  】せざるを得なかった。",
+          "stem": "次の文の言葉の読み方として最もよいものを、1・2・3・4から一つ選びなさい。<br>新規事業の立ち上げをめぐって、役員会の議論は<ruby>紛糾<rt>ふんきゅう</rt></ruby>し、最終的な意思决定を【  】せざるを得なかった。",
           "options": [
             "<ruby>躊躇<rt>ちゅうちょ</rt></ruby>",
             "<ruby>模索<rt>もさく</rt></ruby>",
@@ -1504,12 +1491,12 @@ const PRESET_30_EXAM = {
         },
         {
           "id": 30, "score": 16,
-          "stem": "次のビジネス文書を読んで、後の問いに答えなさい。<br><div style='padding:8px; background:#ffffff; border:1px solid #cbd5e1; border-radius:4px; font-size:9.5pt; line-height:1.6; margin:6px 0;'><b>業務効率化に向けたリモートワーク制度改定のご案内</b><br>社員各位：来月1日より、コアタイム（11:00〜15:00）を廃止し、完全フルフレックス制度へ移行いたします。ただし、情報セキュリティ担保のため、指定の社内VPNを経由しない通信は一切遮断されます。また、週1回の部署定例ミーティングは原則対面参加とします。</div>問：新制度における社員の勤務形態として、本文の内容と合致しているものはどれか。",
+          "stem": "次のビジネス文書を読んで、後の問いに答えなさい。<br><div style='padding:8px; background:#ffffff; border:1px solid #cbd5e1; border-radius:4px; font-size:9.5pt; line-height:1.6; margin:6px 0;'><b>業務効率化に向けたリモートワーク制度改定のご案内</b><br>社員各位：来月1日より、コアタイム（11:00〜15:00）を废止し、完全フルフレックス制度へ移行いたします。ただし、情報セキュリティ担保のため、指定の社内VPNを経由しない通信は一切遮断されます。また、週1回の部署定例ミーティングは原則対面参加とします。</div>問：新制度における社員の勤務形態として、本文の内容と合致しているものはどれか。",
           "options": [
             "コアタイム内であれば事前的連絡なしで自由に退勤できる",
-            "自宅勤務の際も、週に一度はオフィスに出社して定例会に参加する必要がある",
+            "自宅勤務的際も、週に一度はオフィスに出社して定例会に参加する必要がある",
             "社外のカフェ等从个人Wi-Fiで接続することが全面的に推奨されている",
-            "フルフレックス制の导入に伴い、セキュリティ管理基準は大幅に緩和された"
+            "フルフレックス制的导入に伴い、セキュリティ管理基準は大幅に緩和された"
           ],
           "blank_lines": 0
         }
