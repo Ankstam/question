@@ -70,6 +70,7 @@ function buildDocumentHTML(initialData) {
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/mhchem.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
     :root {
@@ -235,13 +236,13 @@ function buildDocumentHTML(initialData) {
       background: rgba(239, 68, 68, 0.03); border-radius: 6px;
     }
 
-    /* 优化项：超长题目允许平滑断页，防止被 break-inside: avoid 锁死导致整题消失 */
+    /* 超长题目允许平滑断页，防止被 break-inside: avoid 锁死导致整题消失 */
     .question-row.allow-break {
       break-inside: auto !important;
       page-break-inside: auto !important;
     }
 
-    /* 优化项：支持复杂超宽大图全幅排版 */
+    /* 支持复杂超宽大图全幅排版 */
     .question-row.full-width-row .q-layout-box {
       flex-direction: column !important;
       align-items: center !important;
@@ -585,7 +586,7 @@ function buildDocumentHTML(initialData) {
     <button class="btn btn-primary" onclick="openExportModal()">📥 导出 / 打印试卷</button>
   </div>
 
-  <!-- 导出选项面板 Action Sheet（完全收敛至高精矢量管线，杜绝 Canvas 位图硬画） -->
+  <!-- 导出选项面板 Action Sheet -->
   <div class="modal-overlay" id="export-modal" onclick="closeExportModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
       <div class="modal-header">试卷与错题本导出中心</div>
@@ -608,6 +609,20 @@ function buildDocumentHTML(initialData) {
           <div>
             <div style="font-weight:700;">🎯 导出错题给 AI 针对训练</div>
             <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">将错题参数自动填入 AI 工坊进行变式训练</div>
+          </div>
+          <span>➔</span>
+        </button>
+        <button class="export-item" onclick="exportDirectPDF(false)">
+          <div>
+            <div>📑 整卷直接下载 PDF 文件 (.pdf)</div>
+            <div style="font-size:11px; color:var(--text-sub);">免驱动客户端快速直出</div>
+          </div>
+          <span>➔</span>
+        </button>
+        <button class="export-item" style="border-color: #fca5a5; background: #fff1f2;" onclick="exportDirectPDF(true)">
+          <div>
+            <div style="color:var(--danger); font-weight:700;">📑 单纯错题直接下载 PDF 文件 (.pdf)</div>
+            <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">仅提取错题一键生成专属错题本</div>
           </div>
           <span>➔</span>
         </button>
@@ -900,7 +915,7 @@ function buildDocumentHTML(initialData) {
       }
     }
 
-    // 针对 LaTeX 宏与 ASCII 控制字符（\f, \t, \r, \b, \n）进行前置词法修复
+    // 针对 LaTeX 宏与 ASCII 控制字符（\\f, \\t, \\r, \\b, \\n）进行前置词法修复
     function sanitizeLatexJSON(rawStr) {
       var bs = String.fromCharCode(92);
       var out = "";
@@ -917,8 +932,7 @@ function buildDocumentHTML(initialData) {
           } else if (next === 'u' && /^[0-9a-fA-F]{4}$/.test(rawStr.substr(i + 2, 4))) {
             out += bs;
           } else if (/^[a-zA-Z]/.test(next)) {
-            // LaTeX 宏命令（如 \frac, \text, \theta, \rho, \beta, \nu 等）
-            // 强制转为双反斜杠，杜绝被系统吞噬为 FormFeed, Tab, Return, Backspace, Newline 控制符
+            // LaTeX 宏命令强制转为双反斜杠
             out += bs + bs;
           } else {
             out += bs + bs;
@@ -953,7 +967,7 @@ function buildDocumentHTML(initialData) {
       return 'cols-1';
     }
 
-    // 全面收敛为“原生矢量 raw_svg + 空间透视 wireframe_3d”双轨统一引擎，彻底移除冗余微引擎
+    // 全面收敛为“原生矢量 raw_svg + 空间透视 wireframe_3d”双轨统一引擎，同时保留旧引擎兼容
     function renderClientDiagram(diagram) {
       if (!diagram) return '';
       if (diagram.engine === "raw_svg" || diagram.svg) return diagram.svg;
@@ -994,6 +1008,17 @@ function buildDocumentHTML(initialData) {
         }).join('');
 
         return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' + dLines + lines + texts + '</svg>';
+      }
+
+      // 兼容旧引擎
+      if (diagram.engine === "func_2d") {
+        return '<svg width="190" height="130" viewBox="0 0 190 130"><line x1="15" y1="105" x2="175" y2="105" stroke="#000" stroke-width="1.2"/><line x1="35" y1="120" x2="35" y2="15" stroke="#000" stroke-width="1.2"/><text x="175" y="115" font-size="10">x</text><text x="25" y="20" font-size="10">y</text><path d="M 35 95 Q 70 15, 110 65 T 165 20" fill="none" stroke="#4f46e5" stroke-width="1.5"/><line x1="110" y1="105" x2="110" y2="65" stroke="#64748b" stroke-dasharray="3,2"/><text x="105" y="118" font-size="9">x₁</text></svg>';
+      }
+      if (diagram.engine === "geography_2d") {
+        return '<svg width="180" height="120" viewBox="0 0 180 120"><ellipse cx="90" cy="60" rx="60" ry="40" fill="none" stroke="#64748b" stroke-width="1.2"/><ellipse cx="86" cy="58" rx="42" ry="28" fill="none" stroke="#64748b" stroke-width="1.2"/><ellipse cx="82" cy="55" rx="25" ry="16" fill="none" stroke="#64748b" stroke-width="1.2"/><circle cx="80" cy="52" r="2.5" fill="#000"/><text x="85" y="55" font-size="8" font-weight="bold">▲850m</text></svg>';
+      }
+      if (diagram.engine === "ielts_chart") {
+        return '<svg width="180" height="120" viewBox="0 0 180 120"><line x1="25" y1="95" x2="165" y2="95" stroke="#000" stroke-width="1"/><line x1="25" y1="95" x2="25" y2="15" stroke="#000" stroke-width="1"/><rect x="40" y="35" width="15" height="60" fill="#4f46e5"/><rect x="60" y="50" width="15" height="45" fill="#93c5fd"/><rect x="100" y="20" width="15" height="75" fill="#4f46e5"/><rect x="120" y="40" width="15" height="55" fill="#93c5fd"/><text x="43" y="110" font-size="8">2010</text><text x="103" y="110" font-size="8">2030</text><text x="8" y="22" font-size="8">%</text></svg>';
       }
 
       return '';
@@ -1121,7 +1146,7 @@ function buildDocumentHTML(initialData) {
         });
       }
 
-      // 关键：等待 KaTeX 数学矢量字库全部加载解码完毕并渲染一帧，杜绝符号发虚与根号截断
+      // 关键：等待 KaTeX 数学矢量字库全部加载解码完毕并渲染一帧
       if (document.fonts && document.fonts.ready) {
         await document.fonts.ready;
       }
@@ -1133,6 +1158,57 @@ function buildDocumentHTML(initialData) {
           row.style.display = 'block';
         });
       }, 50);
+    }
+
+    async function exportDirectPDF(mistakeOnly) {
+      closeExportModal();
+      setPreviewMode('a4-exact');
+
+      if (mistakeOnly) {
+        if (mistakeQuestionIds.size === 0) {
+          alert("尚未勾选任何错题！请先在题干右上角勾选‘标为错题’。");
+          return;
+        }
+        document.querySelectorAll('.question-row').forEach(function(row) {
+          var id = parseInt(row.getAttribute('data-qid'));
+          row.style.display = mistakeQuestionIds.has(id) ? 'block' : 'none';
+        });
+      } else {
+        document.querySelectorAll('.question-row').forEach(function(row) {
+          row.style.display = 'block';
+        });
+      }
+
+      if (document.fonts) await document.fonts.ready;
+
+      var element = document.getElementById('paper-mount-point');
+      var filename = getResolvedFileName('pdf', !!mistakeOnly);
+
+      var opt = {
+        margin: [15, 14, 15, 14],
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', width: 794, windowWidth: 794 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'], avoid: ['.question-row', '.section-title'] }
+      };
+
+      if (window.html2pdf) {
+        window.html2pdf().set(opt).from(element).toPdf().get('pdf').then(function(pdf) {
+          var totalPages = pdf.internal.getNumberOfPages();
+          for (var i = 1; i <= totalPages; i++) {
+            pdf.setPage(i);
+            pdf.setFontSize(9.5);
+            pdf.setTextColor(80, 80, 80);
+            var text = '— ' + i + ' / ' + totalPages + ' —';
+            pdf.text(text, pdf.internal.pageSize.getWidth() / 2, pdf.internal.pageSize.getHeight() - 8, { align: 'center' });
+          }
+        }).save().then(function() {
+          document.querySelectorAll('.question-row').forEach(function(row) {
+            row.style.display = 'block';
+          });
+        });
+      }
     }
 
     function exportStandaloneHTML() {
@@ -1474,7 +1550,7 @@ const PRESET_30_EXAM = {
       "questions": [
         {
           "id": 28, "score": 6,
-          "stem": "次の文の言葉の読み方として最もよいものを、1・2・3・4から一つ選びなさい。<br>新規事業の立ち上げをめぐって、役員会の議論は<ruby>紛糾<rt>ふんきゅう</rt></ruby>し、最終的な意思决定を【  】せざるを得なかった。",
+          "stem": "次の文の言葉の読み方として最もよいものを、1・2・3・4から一つ選びなさい。<br>新規事業の立ち上げをめぐって、役員会の議論は<ruby>紛糾<rt>ふんきゅう</rt></ruby>し、最終的な意思決定を【  】せざるを得なかった。",
           "options": [
             "<ruby>躊躇<rt>ちゅうちょ</rt></ruby>",
             "<ruby>模索<rt>もさく</rt></ruby>",
@@ -1491,7 +1567,7 @@ const PRESET_30_EXAM = {
         },
         {
           "id": 30, "score": 16,
-          "stem": "次のビジネス文書を読んで、後の問いに答えなさい。<br><div style='padding:8px; background:#ffffff; border:1px solid #cbd5e1; border-radius:4px; font-size:9.5pt; line-height:1.6; margin:6px 0;'><b>業務効率化に向けたリモートワーク制度改定のご案内</b><br>社員各位：来月1日より、コアタイム（11:00〜15:00）を废止し、完全フルフレックス制度へ移行いたします。ただし、情報セキュリティ担保のため、指定の社内VPNを経由しない通信は一切遮断されます。また、週1回の部署定例ミーティングは原則対面参加とします。</div>問：新制度における社員の勤務形態として、本文の内容と合致しているものはどれか。",
+          "stem": "次のビジネス文書を読んで、後の問いに答えなさい。<br><div style='padding:8px; background:#ffffff; border:1px solid #cbd5e1; border-radius:4px; font-size:9.5pt; line-height:1.6; margin:6px 0;'><b>業務効率化に向けたリモートワーク制度改定のご案内</b><br>社員各位：来月1日より、コアタイム（11:00〜15:00）を廃止し、完全フルフレックス制度へ移行いたします。ただし、情報セキュリティ担保のため、指定の社内VPNを経由しない通信は一切遮断されます。また、週1回の部署定例ミーティングは原則対面参加とします。</div>問：新制度における社員の勤務形態として、本文の内容と合致しているものはどれか。",
           "options": [
             "コアタイム内であれば事前的連絡なしで自由に退勤できる",
             "自宅勤務的際も、週に一度はオフィスに出社して定例会に参加する必要がある",
