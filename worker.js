@@ -226,31 +226,12 @@ function buildDocumentHTML(initialData) {
 
     .question-row {
       position: relative;
-      break-inside: avoid !important;
-      page-break-inside: avoid !important;
-      margin-bottom: var(--q-spacing);
-      text-align: justify;
+      break-inside: avoid !important; page-break-inside: avoid !important;
+      margin-bottom: var(--q-spacing); text-align: justify;
       transition: background 0.2s;
     }
     .question-row.is-mistake {
       background: rgba(239, 68, 68, 0.03); border-radius: 6px;
-    }
-
-    /* 改进点：长题允许在留白区平滑跨页，避免撑爆导致整题消失 */
-    .question-row.allow-break {
-      break-inside: auto !important;
-      page-break-inside: auto !important;
-    }
-
-    /* 改进点：支持复杂超宽大图全幅排版 */
-    .question-row.full-width-row .q-layout-box {
-      flex-direction: column !important;
-      align-items: center !important;
-    }
-    .question-row.full-width-row .q-cell-graphic {
-      width: 100% !important;
-      max-width: 100% !important;
-      margin-top: 8px !important;
     }
 
     .mistake-btn {
@@ -312,6 +293,9 @@ function buildDocumentHTML(initialData) {
     }
     .export-item.highlight { border-color: var(--primary); background: #f5f3ff; }
 
+    /* =========================================================
+       打印排版根基重构（彻底解决左侧截断、缺字与模糊）
+       ========================================================= */
     @media print {
       @page {
         size: A4 portrait;
@@ -340,10 +324,12 @@ function buildDocumentHTML(initialData) {
         print-color-adjust: exact !important;
       }
 
+      /* 隐藏所有界面控件 */
       .app-header, .bottom-bar, #panel-ai, #panel-edit, .preview-bar, .modal-overlay, .mistake-btn {
         display: none !important;
       }
 
+      /* 展开内容容器，解除移动端固定宽度与滚动盒模型的限制 */
       .main-body {
         padding: 0 !important;
         margin: 0 !important;
@@ -370,6 +356,8 @@ function buildDocumentHTML(initialData) {
         transform: none !important;
       }
 
+      /* 高特异性选择器：彻底废除 210mm 屏幕宽度与内边距叠加，
+         让内容完美占满 @page 的 180mm 打印区，左右边距严格为 15mm，绝不外溢切字 */
       div.paper-sheet,
       div.paper-sheet.a4-exact,
       div.paper-sheet.mobile-fit {
@@ -408,21 +396,6 @@ function buildDocumentHTML(initialData) {
         page-break-inside: avoid !important;
         margin-bottom: var(--q-spacing) !important;
         text-align: justify !important;
-      }
-
-      .question-row.allow-break {
-        break-inside: auto !important;
-        page-break-inside: auto !important;
-      }
-
-      .question-row.full-width-row .q-layout-box {
-        flex-direction: column !important;
-        align-items: center !important;
-      }
-
-      .question-row.full-width-row .q-cell-graphic {
-        width: 100% !important;
-        max-width: 100% !important;
       }
 
       .q-layout-box {
@@ -546,7 +519,7 @@ function buildDocumentHTML(initialData) {
       <div class="card">
         <div class="card-title">
           <span>试卷 JSON 数据协议</span>
-          <span style="font-size: 10px; color: var(--text-sub);">内置全自动词法修复</span>
+          <span style="font-size: 10px; color: var(--text-sub);">双斜杠容错</span>
         </div>
         <div class="action-row">
           <button class="btn-sm" onclick="pasteFromClipboard()">📋 剪贴板粘贴</button>
@@ -652,7 +625,6 @@ function buildDocumentHTML(initialData) {
       }
     });
 
-    // 活跃重试检测 KaTeX，防止未加载时被静默跳过
     function renderMathSafely(container) {
       if (typeof renderMathInElement === 'function') {
         renderMathInElement(container, {
@@ -720,11 +692,8 @@ function buildDocumentHTML(initialData) {
       var systemPrompt = '你是一名顶尖的高中数理化试卷出题专家。必须严格输出符合规范的纯 JSON 格式：' +
         '{"paper_title": "试卷名", "meta": {"subject": "科目", "time": "120分钟", "total_score": 100}, ' +
         '"sections": [{"title": "大题标题", "questions": [{"id": 1, "score": 10, "stem": "题干", ' +
-        '"options": ["A", "B", "C", "D"], "blank_lines": 6, "is_full_width": false, "diagram": null}]}]}. ' +
-        '注意规范：' +
-        '1. 公式与变量必须包裹在 $...$ 内且反斜杠严格双重转义（如 \\\\frac, \\\\theta, \\\\mu, \\\\sqrt{2}）；' +
-        '2. 配图使用 raw_svg（viewBox="0 0 190 130"），超宽图设 is_full_width 为 true；' +
-        '3. 电学滑动变阻器需画出滑片P与上金属杆、下电阻丝；磁场阵列需间距规整；弹簧使用规整锯齿折线。大题 blank_lines 设置为 6。';
+        '"options": ["A", "B", "C", "D"], "blank_lines": 6, "diagram": null}]}]}. ' +
+        '注意：所有公式必须包裹在 $...$ 内且反斜杠双重转义（如 \\\\mu, \\\\alpha, \\\\sqrt{2}）。大题 blank_lines 为 6。';
 
       var userMsg = document.getElementById('ai-user-prompt').value.trim();
 
@@ -911,43 +880,32 @@ function buildDocumentHTML(initialData) {
       }
     }
 
-    // 针对 LaTeX 宏与 ASCII 控制字符（\f, \t, \r, \b, \n）进行前置词法修复
-    function sanitizeLatexJSON(rawStr) {
-      var bs = String.fromCharCode(92);
-      var out = "";
-      for (var i = 0; i < rawStr.length; i++) {
-        var ch = rawStr[i];
-        if (ch === bs) {
-          var next = rawStr[i + 1] || "";
-          if (next === bs) {
-            out += bs + bs;
-            i++;
-          } else if (next === '"' || next === '/') {
-            out += bs + next;
-            i++;
-          } else if (next === 'u' && /^[0-9a-fA-F]{4}$/.test(rawStr.substr(i + 2, 4))) {
-            out += bs;
-          } else if (/^[a-zA-Z]/.test(next)) {
-            // LaTeX 宏命令（如 \frac, \text, \theta, \rho, \beta, \nu 等）
-            // 强制转为双反斜杠，杜绝被 JSON 解析为 FormFeed, Tab, Return, Backspace, Newline 控制符
-            out += bs + bs;
-          } else {
-            out += bs + bs;
-          }
-        } else {
-          out += ch;
-        }
-      }
-      return out;
-    }
-
     function parseJSONWithTolerance(rawStr) {
       try {
-        var sanitized = sanitizeLatexJSON(rawStr);
-        return JSON.parse(sanitized);
+        return JSON.parse(rawStr);
       } catch (e1) {
         try {
-          return JSON.parse(rawStr);
+          var bs = String.fromCharCode(92);
+          var out = "";
+          for (var i = 0; i < rawStr.length; i++) {
+            var ch = rawStr[i];
+            if (ch === bs) {
+              var next = rawStr[i + 1] || "";
+              if (next === bs) {
+                out += bs + bs;
+                i++;
+              } else if ('"/bfnrt'.indexOf(next) !== -1) {
+                out += bs;
+              } else if (next === 'u' && /^[0-9a-fA-F]{4}$/.test(rawStr.substr(i + 2, 4))) {
+                out += bs;
+              } else {
+                out += bs + bs;
+              }
+            } else {
+              out += ch;
+            }
+          }
+          return JSON.parse(out);
         } catch (e2) {
           throw e1;
         }
@@ -1049,12 +1007,7 @@ function buildDocumentHTML(initialData) {
       (data.sections || []).forEach(function(sec) {
         html += '<div class="section-title">' + sec.title + '</div>';
         (sec.questions || []).forEach(function(q) {
-          // 检查是否全幅显示或长留白题
-          var isFullWidth = !!(q.is_full_width || (q.diagram && q.diagram.is_full_width));
-          var isLong = !!(q.blank_lines && q.blank_lines >= 8);
-          var rowClass = 'question-row' + (isFullWidth ? ' full-width-row' : '') + (isLong ? ' allow-break' : '');
-
-          html += '<div class="' + rowClass + '" data-qid="' + q.id + '">';
+          html += '<div class="question-row" data-qid="' + q.id + '">';
           html += '  <button class="mistake-btn" onclick="toggleMistake(' + q.id + ')">标为错题</button>';
           html += '  <div class="q-layout-box">';
           html += '    <div class="q-cell-content">';
@@ -1117,10 +1070,11 @@ function buildDocumentHTML(initialData) {
       }, 300);
     }
 
-    // 核心原生打印：引入 document.fonts.ready 字体完全就绪守卫，杜绝公式缺字与发虚
-    async function triggerChromePrint(mistakeOnly) {
+    // 核心原生打印：清除横向滚动偏移，杜绝双重页边距
+    function triggerChromePrint(mistakeOnly) {
       closeExportModal();
 
+      // 重置移动端滚动偏移，防止截断左边缘
       var scroller = document.querySelector('.paper-scroller');
       if (scroller) {
         scroller.scrollLeft = 0;
@@ -1143,18 +1097,12 @@ function buildDocumentHTML(initialData) {
         });
       }
 
-      // 等待 KaTeX 数学矢量字库加载完成并完成一帧渲染
-      if (document.fonts && document.fonts.ready) {
-        await document.fonts.ready;
-      }
-      await new Promise(function(resolve) { requestAnimationFrame(resolve); });
-
       setTimeout(function() {
         window.print();
         document.querySelectorAll('.question-row').forEach(function(row) {
           row.style.display = 'block';
         });
-      }, 50);
+      }, 150);
     }
 
     async function exportDirectPDF(mistakeOnly) {
@@ -1539,7 +1487,7 @@ const PRESET_30_EXAM = {
       "questions": [
         {
           "id": 28, "score": 6,
-          "stem": "次の文の言葉の読み方として最もよいものを、1・2・3・4から一つ選びなさい。<br>新規事業の立ち上げをめぐって、役員会の議論は<ruby>紛糾<rt>ふんきゅう</rt></ruby>し、最終的な意思决定を【  】せざるを得なかった。",
+          "stem": "次の文の言葉の読み方として最もよいものを、1・2・3・4から一つ選びなさい。<br>新規事業の立ち上げをめぐって、役員会の議論は<ruby>紛糾<rt>ふんきゅう</rt></ruby>し、最終的な意思決定を【  】せざるを得なかった。",
           "options": [
             "<ruby>躊躇<rt>ちゅうちょ</rt></ruby>",
             "<ruby>模索<rt>もさく</rt></ruby>",
@@ -1556,7 +1504,7 @@ const PRESET_30_EXAM = {
         },
         {
           "id": 30, "score": 16,
-          "stem": "次のビジネス文書を読んで、後の問いに答えなさい。<br><div style='padding:8px; background:#ffffff; border:1px solid #cbd5e1; border-radius:4px; font-size:9.5pt; line-height:1.6; margin:6px 0;'><b>業務効率化に向けたリモートワーク制度改定のご案内</b><br>社員各位：来月1日より、コアタイム（11:00〜15:00）を废止し、完全フルフレックス制度へ移行いたします。ただし、情報セキュリティ担保のため、指定の社内VPNを経由しない通信は一切遮断されます。また、週1回の部署定例ミーティングは原則対面参加とします。</div>問：新制度における社員の勤務形態として、本文の内容と合致しているものはどれか。",
+          "stem": "次のビジネス文書を読んで、後の問いに答えなさい。<br><div style='padding:8px; background:#ffffff; border:1px solid #cbd5e1; border-radius:4px; font-size:9.5pt; line-height:1.6; margin:6px 0;'><b>業務効率化に向けたリモートワーク制度改定のご案内</b><br>社員各位：来月1日より、コアタイム（11:00〜15:00）を廃止し、完全フルフレックス制度へ移行いたします。ただし、情報セキュリティ担保のため、指定の社内VPNを経由しない通信は一切遮断されます。また、週1回の部署定例ミーティングは原則対面参加とします。</div>問：新制度における社員の勤務形態として、本文の内容と合致しているものはどれか。",
           "options": [
             "コアタイム内であれば事前的連絡なしで自由に退勤できる",
             "自宅勤務の際も、週に一度はオフィスに出社して定例会に参加する必要がある",
