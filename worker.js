@@ -70,16 +70,23 @@ function buildDocumentHTML(initialData) {
   <style>
     :root {
       --primary: #4f46e5;
+      --primary-hover: #4338ca;
       --primary-light: #e0e7ff;
+      --primary-soft: #f5f3ff;
       --danger: #ef4444;
       --danger-light: #fee2e2;
+      --success: #10b981;
+      --success-light: #d1fae5;
+      --warning: #f59e0b;
       --surface: #ffffff;
-      --bg: #f8fafc;
+      --bg: #f1f5f9;
       --text-main: #0f172a;
       --text-sub: #64748b;
       --border: #e2e8f0;
-      --radius: 12px;
-      --shadow: 0 4px 20px -2px rgba(0,0,0,0.05);
+      --radius: 14px;
+      --radius-sm: 10px;
+      --shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.06);
+      --shadow-lg: 0 12px 32px -4px rgba(15, 23, 42, 0.1);
       --paper-font-size: 10.5pt;
       --paper-line-height: 1.65;
       --q-spacing: 18px;
@@ -90,6 +97,7 @@ function buildDocumentHTML(initialData) {
       --option-gap: 4px;
       --stem-option-gap: 6px;
     }
+
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
       margin: 0; padding: 0;
@@ -100,113 +108,158 @@ function buildDocumentHTML(initialData) {
     }
     svg { overflow: visible !important; }
 
+    /* ===== Header ===== */
     .app-header {
       position: sticky; top: 0; z-index: 50;
-      background: rgba(255,255,255,0.96);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border-bottom: 1px solid rgba(226,232,240,0.8);
     }
-    .header-bar { padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .header-bar {
+      padding: 12px 18px; display: flex; justify-content: space-between; align-items: center;
+    }
     .header-bar h2 {
-      margin: 0; font-size: 15px; font-weight: 800;
-      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
-    .badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 9999px; background: var(--primary-light); color: var(--primary); }
-    .tabs { display: flex; gap: 4px; padding: 4px 10px 8px; overflow-x: auto; }
+    .badge {
+      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px;
+      background: var(--primary-light); color: var(--primary); vertical-align: middle; margin-left: 4px;
+    }
+    .tabs {
+      display: flex; gap: 6px; padding: 0 12px 10px; overflow-x: auto;
+    }
     .tab-btn {
-      flex: 1; padding: 9px 10px; border: none; background: transparent;
-      font-size: 12.5px; font-weight: 600; color: var(--text-sub);
-      border-radius: 8px; cursor: pointer; white-space: nowrap; text-align: center;
-      min-height: 40px;
+      flex: 1; padding: 10px 12px; border: none; background: transparent;
+      font-size: 13px; font-weight: 600; color: var(--text-sub);
+      border-radius: 10px; cursor: pointer; white-space: nowrap; text-align: center;
+      min-height: 42px; transition: all 0.2s ease;
     }
-    .tab-btn.active { background: #fff; color: var(--primary); box-shadow: 0 1px 4px rgba(0,0,0,0.08); font-weight: 700; }
+    .tab-btn:hover { background: rgba(79,70,229,0.06); color: var(--primary); }
+    .tab-btn.active {
+      background: #fff; color: var(--primary);
+      box-shadow: 0 2px 8px rgba(79,70,229,0.12); font-weight: 700;
+    }
 
-    .main-body { padding: 12px; padding-bottom: 140px; max-width: 1100px; margin: 0 auto; }
-    .panel { display: none; }
+    .main-body { padding: 14px; padding-bottom: 140px; max-width: 1100px; margin: 0 auto; }
+    .panel { display: none; animation: fadeIn 0.25s ease; }
     .panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
+    /* ===== Cards ===== */
     .card {
-      background: var(--surface); padding: 14px; border-radius: var(--radius);
-      border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 12px;
+      background: var(--surface); padding: 16px; border-radius: var(--radius);
+      border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 14px;
+      transition: box-shadow 0.2s ease;
     }
+    .card:hover { box-shadow: var(--shadow-lg); }
     .card-title {
-      font-size: 13px; font-weight: 700; margin-bottom: 10px;
+      font-size: 13.5px; font-weight: 700; margin-bottom: 12px;
       display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;
+      color: var(--text-main);
     }
 
-    .action-row { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+    .action-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
     .btn-sm {
-      padding: 7px 11px; font-size: 12px; font-weight: 600; border-radius: 8px;
+      padding: 7px 12px; font-size: 12px; font-weight: 600; border-radius: 9px;
       border: 1px solid var(--border); background: #fff; color: var(--text-main); cursor: pointer;
-      min-height: 34px;
+      min-height: 34px; transition: all 0.18s ease;
     }
+    .btn-sm:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
     .btn-sm.active-preset { background: var(--primary); color: #fff; border-color: var(--primary); }
     .btn-sm.danger { border-color: #fca5a5; color: var(--danger); }
+    .btn-sm.danger:hover { background: var(--danger-light); }
 
     input[type="text"], input[type="password"], textarea, select {
-      width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px;
-      font-size: 13px; outline: none; background: #fafafa; color: var(--text-main);
+      width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 13px; outline: none; background: #f8fafc; color: var(--text-main);
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
     }
-    input:focus, textarea:focus, select:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 2px var(--primary-light); }
-    textarea { font-family: "SF Mono", Menlo, Consolas, monospace; min-height: 140px; line-height: 1.5; }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--primary); background: #fff;
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+    }
+    textarea { font-family: "SF Mono", Menlo, Consolas, monospace; min-height: 140px; line-height: 1.55; }
     select { cursor: pointer; }
 
-    .slider-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .slider-item { display: flex; flex-direction: column; gap: 3px; }
-    .slider-item label { font-size: 11px; color: var(--text-sub); display: flex; justify-content: space-between; font-weight: 600; }
-    .slider-item input[type="range"] { width: 100%; margin: 4px 0; }
+    .slider-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .slider-item { display: flex; flex-direction: column; gap: 4px; }
+    .slider-item label { font-size: 11.5px; color: var(--text-sub); display: flex; justify-content: space-between; font-weight: 600; }
+    .slider-item input[type="range"] { width: 100%; margin: 4px 0; accent-color: var(--primary); }
 
-    .layout-template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; margin-bottom: 10px; }
+    .layout-template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-bottom: 12px; }
     .layout-tpl-btn {
-      padding: 9px 6px; border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 8px; border: 1.5px solid var(--border); border-radius: 10px;
       background: #fff; font-size: 12px; font-weight: 600; cursor: pointer; text-align: center;
+      transition: all 0.18s ease;
     }
-    .layout-tpl-btn.active { border-color: var(--primary); background: #f5f3ff; color: var(--primary); }
+    .layout-tpl-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .layout-tpl-btn.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
 
-    .history-list { max-height: 220px; overflow-y: auto; }
+    .history-list { max-height: 240px; overflow-y: auto; border-radius: 10px; }
     .history-item {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 12.5px; gap: 8px;
+      padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px; gap: 8px;
+      transition: background 0.15s;
     }
+    .history-item:last-child { border-bottom: none; }
     .history-item:hover { background: #f8fafc; }
-    .history-item .title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .history-item .title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; cursor: pointer; }
+    .history-item .title:hover { color: var(--primary); }
     .history-item .time { color: var(--text-sub); font-size: 11px; }
 
     .tag {
-      display: inline-block; padding: 1px 7px; margin: 1px 2px; border-radius: 9999px;
-      font-size: 10.5px; background: #e0e7ff; color: #3730a3; font-weight: 600;
+      display: inline-block; padding: 1px 8px; margin: 1px 2px; border-radius: 9999px;
+      font-size: 10.5px; background: var(--primary-light); color: #3730a3; font-weight: 600;
     }
 
     .preview-bar {
-      display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 6px; flex-wrap: wrap;
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px; flex-wrap: wrap;
     }
     .mistake-counter {
       font-size: 12px; font-weight: 700; color: var(--danger);
-      background: var(--danger-light); padding: 4px 9px; border-radius: 6px;
+      background: var(--danger-light); padding: 5px 10px; border-radius: 8px;
     }
 
-    .paper-scroller { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 16px; }
+    /* ===== Paper 纸张质感 ===== */
+    .paper-scroller { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 20px; }
     .paper-sheet {
-      background: #fff !important; margin: 0 auto;
+      background: #fffeff !important; margin: 0 auto;
       font-family: "Songti SC", "SimSun", "Times New Roman", "Yu Mincho", serif;
-      color: #000; font-size: var(--paper-font-size); line-height: var(--paper-line-height);
+      color: #111; font-size: var(--paper-font-size); line-height: var(--paper-line-height);
+      transition: box-shadow 0.3s ease;
     }
-    .paper-sheet.mobile-fit { width: 100% !important; padding: 10px 6px; }
-    .paper-sheet.desktop-mode { width: 100% !important; max-width: 900px; padding: 20px 24px; }
+    .paper-sheet.mobile-fit { width: 100% !important; padding: 12px 8px; }
+    .paper-sheet.desktop-mode {
+      width: 100% !important; max-width: 920px; padding: 28px 32px;
+      border-radius: 4px;
+      box-shadow:
+        0 1px 2px rgba(0,0,0,0.04),
+        0 4px 12px rgba(0,0,0,0.06),
+        0 16px 32px rgba(0,0,0,0.08);
+      border: 1px solid #e5e7eb;
+    }
     .paper-sheet.a4-exact {
       width: 210mm !important; min-height: 297mm;
       padding: var(--paper-padding-v) var(--paper-padding-h);
-      border: 1px solid var(--border); box-shadow: var(--shadow);
+      border-radius: 2px;
+      box-shadow:
+        0 1px 3px rgba(0,0,0,0.05),
+        0 8px 20px rgba(0,0,0,0.08),
+        0 20px 40px rgba(0,0,0,0.06);
+      border: 1px solid #e2e8f0;
+      background: linear-gradient(to bottom, #fffeff 0%, #fdfcfa 100%) !important;
     }
 
-    .paper-title { text-align: center; font-size: 1.5em; margin: 0 0 8px 0; font-weight: bold; }
+    .paper-title { text-align: center; font-size: 1.55em; margin: 0 0 10px 0; font-weight: bold; letter-spacing: 0.02em; }
     .paper-meta {
       display: flex; justify-content: space-around; font-size: 0.85em;
-      border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 14px; flex-wrap: wrap; gap: 4px;
+      border-bottom: 2px solid #1e293b; padding-bottom: 10px; margin-bottom: 16px; flex-wrap: wrap; gap: 6px;
     }
     .section-title {
-      font-size: 1.05em; font-weight: bold; margin: 14px 0 9px;
+      font-size: 1.08em; font-weight: bold; margin: 16px 0 10px;
       break-after: avoid !important; page-break-after: avoid !important;
     }
 
@@ -215,42 +268,44 @@ function buildDocumentHTML(initialData) {
       break-inside: avoid !important; page-break-inside: avoid !important;
       margin-bottom: var(--q-spacing); text-align: justify;
     }
-    .question-row.is-mistake { background: rgba(239,68,68,0.03); border-radius: 6px; }
+    .question-row.is-mistake { background: rgba(239,68,68,0.04); border-radius: 8px; }
     .question-row.allow-break { break-inside: auto !important; page-break-inside: auto !important; }
 
     .mistake-btn {
-      position: absolute; right: 0; top: -5px;
-      font-size: 11px; padding: 2px 7px; border-radius: 4px;
+      position: absolute; right: 0; top: -6px;
+      font-size: 11px; padding: 3px 8px; border-radius: 6px;
       border: 1px solid var(--border); background: #fff; color: var(--text-sub); cursor: pointer;
-      z-index: 5;
+      z-index: 5; transition: all 0.15s;
     }
-    .question-row.is-mistake .mistake-btn { background: var(--danger); color: #fff; border-color: var(--danger); font-weight: bold; }
+    .mistake-btn:hover { border-color: var(--danger); color: var(--danger); }
+    .question-row.is-mistake .mistake-btn {
+      background: var(--danger); color: #fff; border-color: var(--danger); font-weight: bold;
+    }
 
-    /* 净版模式 */
     .clean-mode .mistake-btn,
     .clean-mode .paper-meta span:nth-child(n+4),
     .clean-mode .q-score { display: none !important; }
 
-    /* 排版模板 */
-    .layout-standard .q-layout-box { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; width: 100%; }
+    /* Layout templates */
+    .layout-standard .q-layout-box { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; width: 100%; }
     .layout-standard .q-cell-content { flex: 1 1 auto; min-width: 0; }
     .layout-standard .q-cell-graphic { width: var(--diagram-width); flex: 0 0 var(--diagram-width); display: flex; justify-content: center; }
 
-    .layout-twocol .questions-flow { column-count: 2; column-gap: 16px; column-rule: 1px solid #e2e8f0; }
+    .layout-twocol .questions-flow { column-count: 2; column-gap: 18px; column-rule: 1px solid #e2e8f0; }
     .layout-twocol .question-row { break-inside: avoid; page-break-inside: avoid; }
     .layout-twocol .q-layout-box { display: block; }
-    .layout-twocol .q-cell-graphic { width: 100%; max-width: 130px; margin: 5px auto; text-align: center; }
+    .layout-twocol .q-cell-graphic { width: 100%; max-width: 130px; margin: 6px auto; text-align: center; }
 
-    .layout-compact .q-layout-box { display: flex; gap: 8px; align-items: flex-start; }
+    .layout-compact .q-layout-box { display: flex; gap: 10px; align-items: flex-start; }
     .layout-compact .q-cell-content { flex: 1; min-width: 0; }
-    .layout-compact .q-cell-graphic { width: 100px; flex: 0 0 100px; }
-    .layout-compact .q-cell-graphic svg { max-width: 100px; height: auto; }
+    .layout-compact .q-cell-graphic { width: 105px; flex: 0 0 105px; }
+    .layout-compact .q-cell-graphic svg { max-width: 105px; height: auto; }
 
     .layout-option-newline .options-grid,
     .layout-option-newline .options-grid.cols-4,
     .layout-option-newline .options-grid.cols-2,
     .layout-option-newline .options-grid.cols-1 {
-      display: flex !important; flex-direction: column !important; gap: 2px !important;
+      display: flex !important; flex-direction: column !important; gap: 3px !important;
     }
 
     .qnum-dot .q-num { font-weight: bold; }
@@ -260,69 +315,108 @@ function buildDocumentHTML(initialData) {
     .qnum-right .q-num { font-weight: bold; }
     .qnum-right .q-bracket { color: #64748b; font-size: 0.95em; }
 
-    .options-grid { margin: var(--stem-option-gap) 0 2px; }
+    .options-grid { margin: var(--stem-option-gap) 0 3px; }
     .options-grid.cols-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--option-gap); }
     .options-grid.cols-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--option-gap); }
     .options-grid.cols-1 { display: flex; flex-direction: column; gap: var(--option-gap); }
 
-    .blank-space { margin-top: 3px; width: 100%; display: flex; flex-direction: column; }
+    .blank-space { margin-top: 4px; width: 100%; display: flex; flex-direction: column; }
     .rule-blank { width: 100%; height: var(--rule-height); border-bottom: 1px solid transparent !important; }
 
+    /* Bottom bar */
     .bottom-bar {
       position: fixed; bottom: 0; left: 0; right: 0;
-      background: rgba(255,255,255,0.96); backdrop-filter: blur(10px);
-      padding: 9px 12px calc(9px + env(safe-area-inset-bottom));
-      border-top: 1px solid var(--border); display: flex; gap: 8px; z-index: 60;
+      background: rgba(255,255,255,0.94); backdrop-filter: blur(14px);
+      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+      border-top: 1px solid rgba(226,232,240,0.9); display: flex; gap: 10px; z-index: 60;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.04);
     }
     .btn {
-      flex: 1; padding: 11px 0; border-radius: 10px; border: none; font-size: 13px; font-weight: 700;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;
-      min-height: 44px;
+      flex: 1; padding: 12px 0; border-radius: 12px; border: none; font-size: 13.5px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+      min-height: 46px; transition: all 0.2s ease;
     }
     .btn-secondary { background: #f1f5f9; color: var(--text-main); }
-    .btn-primary { background: linear-gradient(135deg, #4f46e5, #4338ca); color: #fff; }
+    .btn-secondary:hover { background: #e2e8f0; }
+    .btn-primary {
+      background: linear-gradient(135deg, #4f46e5, #4338ca); color: #fff;
+      box-shadow: 0 4px 14px rgba(79,70,229,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(79,70,229,0.35); }
     .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
 
+    /* Modal */
     .modal-overlay {
       display: none; position: fixed; inset: 0;
-      background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); z-index: 100;
+      background: rgba(15,23,42,0.55); backdrop-filter: blur(6px); z-index: 100;
       justify-content: center; align-items: flex-end;
     }
     .modal-overlay.active { display: flex; }
     .modal-content {
-      background: #fff; width: 100%; max-width: 520px; border-radius: 18px 18px 0 0;
-      padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
-      box-shadow: 0 -4px 30px rgba(0,0,0,0.15);
+      background: #fff; width: 100%; max-width: 520px; border-radius: 20px 20px 0 0;
+      padding: 22px 18px calc(20px + env(safe-area-inset-bottom));
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
       max-height: 85vh; overflow-y: auto;
+      animation: slideUp 0.28s ease;
     }
-    .modal-header { font-size: 15px; font-weight: 800; margin-bottom: 12px; text-align: center; }
-    .export-grid { display: flex; flex-direction: column; gap: 7px; }
+    @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .modal-header { font-size: 16px; font-weight: 800; margin-bottom: 14px; text-align: center; }
+    .export-grid { display: flex; flex-direction: column; gap: 8px; }
     .export-item {
-      padding: 11px 12px; border: 1px solid var(--border); background: #fff;
-      border-radius: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+      padding: 13px 14px; border: 1.5px solid var(--border); background: #fff;
+      border-radius: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+      transition: all 0.18s;
     }
-    .export-item.highlight { border-color: var(--primary); background: #f5f3ff; }
+    .export-item:hover { border-color: var(--primary); background: var(--primary-soft); }
+    .export-item.highlight { border-color: var(--primary); background: var(--primary-soft); }
 
     .render-status {
-      position: fixed; top: 60px; right: 12px; z-index: 70;
-      background: #1e293b; color: #fff; padding: 6px 12px; border-radius: 8px;
-      font-size: 12px; opacity: 0; transition: opacity 0.2s; pointer-events: none;
+      position: fixed; top: 64px; right: 14px; z-index: 70;
+      background: #1e293b; color: #fff; padding: 7px 14px; border-radius: 10px;
+      font-size: 12.5px; opacity: 0; transition: opacity 0.25s; pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
-    .render-status.show { opacity: 0.9; }
+    .render-status.show { opacity: 0.92; }
+
+    /* ===== Toast ===== */
+    #toast-container {
+      position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+      z-index: 200; display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+      width: min(92vw, 360px);
+    }
+    .toast {
+      background: #1e293b; color: #fff; padding: 12px 16px; border-radius: 12px;
+      font-size: 13.5px; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      display: flex; align-items: center; gap: 10px;
+      animation: toastIn 0.3s ease; pointer-events: auto;
+    }
+    .toast.success { background: linear-gradient(135deg, #059669, #10b981); }
+    .toast.error { background: linear-gradient(135deg, #dc2626, #ef4444); }
+    .toast.info { background: linear-gradient(135deg, #4f46e5, #6366f1); }
+    .toast.warning { background: linear-gradient(135deg, #d97706, #f59e0b); }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+      to { opacity: 1; transform: none; }
+    }
+    .toast-out { animation: toastOut 0.25s ease forwards; }
+    @keyframes toastOut {
+      to { opacity: 0; transform: translateY(-8px) scale(0.96); }
+    }
 
     @media (min-width: 768px) {
-      .main-body { padding: 18px; padding-bottom: 120px; }
-      .tab-btn { font-size: 13px; padding: 10px 14px; }
-      .bottom-bar { padding: 10px 20px; }
+      .main-body { padding: 20px; padding-bottom: 120px; }
+      .tab-btn { font-size: 13.5px; padding: 11px 16px; }
+      .bottom-bar { padding: 12px 24px; }
     }
 
     @media print {
       @page { size: A4 portrait; margin: 12mm; }
-      .app-header, .bottom-bar, #panel-ai, #panel-edit, .preview-bar, .modal-overlay, .mistake-btn, .render-status { display: none !important; }
+      .app-header, .bottom-bar, #panel-ai, #panel-edit, .preview-bar, .modal-overlay, .mistake-btn, .render-status, #toast-container { display: none !important; }
       .main-body, #panel-preview, .paper-scroller { padding: 0 !important; margin: 0 !important; max-width: none !important; width: 100% !important; overflow: visible !important; }
       div.paper-sheet, div.paper-sheet.a4-exact, div.paper-sheet.mobile-fit, div.paper-sheet.desktop-mode {
         width: 100% !important; max-width: 100% !important; min-height: auto !important;
         margin: 0 !important; padding: 0 !important; border: none !important; box-shadow: none !important;
+        background: #fff !important;
       }
       .question-row { break-inside: avoid !important; page-break-inside: avoid !important; }
       .question-row.allow-break { break-inside: auto !important; page-break-inside: auto !important; }
@@ -333,12 +427,13 @@ function buildDocumentHTML(initialData) {
   </style>
 </head>
 <body>
+  <div id="toast-container"></div>
   <div class="render-status" id="render-status">渲染中...</div>
 
   <header class="app-header">
     <div class="header-bar">
       <h2>ExamCraft AI <span class="badge">Pro</span></h2>
-      <div style="font-size:11px;color:var(--text-sub);" id="offline-status">在线</div>
+      <div style="font-size:11.5px;color:var(--text-sub);font-weight:500;" id="offline-status">在线</div>
     </div>
     <div class="tabs">
       <button class="tab-btn active" id="tab-nav-ai" onclick="setTab('ai')">🤖 AI 出题</button>
@@ -355,17 +450,17 @@ function buildDocumentHTML(initialData) {
           <span>大模型 API 配置</span>
           <span style="font-size:11px;color:var(--text-sub);">本地持久化</span>
         </div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;flex-direction:column;gap:10px;">
           <div>
-            <label style="font-size:11px;color:var(--text-sub);font-weight:600;">API Base URL</label>
+            <label style="font-size:11.5px;color:var(--text-sub);font-weight:600;">API Base URL</label>
             <input type="text" id="ai-base-url" placeholder="https://api.deepseek.com/v1">
           </div>
           <div>
-            <label style="font-size:11px;color:var(--text-sub);font-weight:600;">API Key</label>
+            <label style="font-size:11.5px;color:var(--text-sub);font-weight:600;">API Key</label>
             <input type="password" id="ai-api-key" placeholder="sk-...">
           </div>
           <div>
-            <label style="font-size:11px;color:var(--text-sub);font-weight:600;">Model Name</label>
+            <label style="font-size:11.5px;color:var(--text-sub);font-weight:600;">Model Name</label>
             <input type="text" id="ai-model-name" placeholder="deepseek-chat">
           </div>
           <button class="btn-sm" style="align-self:flex-start;" onclick="saveAISettings()">💾 保存配置</button>
@@ -386,7 +481,7 @@ function buildDocumentHTML(initialData) {
           <span id="ai-status-badge" class="badge" style="display:none;background:#fef3c7;color:#b45309;">生成中...</span>
         </div>
         <textarea id="ai-user-prompt" placeholder="例如：出4道立体几何综合题，要求含纯矢量SVG插图..."></textarea>
-        <div class="action-row" style="margin-top:8px;">
+        <div class="action-row" style="margin-top:10px;">
           <button class="btn btn-primary" onclick="triggerAIGeneration('create')">🚀 生成试卷</button>
           <button class="btn btn-danger" onclick="triggerAIGeneration('mistake_variants')">🎯 错题变式</button>
         </div>
@@ -405,7 +500,7 @@ function buildDocumentHTML(initialData) {
           <button class="btn-sm" onclick="saveCurrentToHistory()">💾 保存当前试卷</button>
         </div>
         <div class="history-list" id="history-list">
-          <div style="padding:12px;color:var(--text-sub);font-size:12px;text-align:center;">暂无历史记录</div>
+          <div style="padding:16px;color:var(--text-sub);font-size:12.5px;text-align:center;">暂无历史记录</div>
         </div>
       </div>
 
@@ -420,8 +515,8 @@ function buildDocumentHTML(initialData) {
           <button class="btn-sm" onclick="resetLayoutToDefault()" style="font-size:11px;">↺ 恢复默认</button>
         </div>
 
-        <div style="margin-bottom:8px;">
-          <label style="font-size:11px;color:var(--text-sub);font-weight:600;">排版模板</label>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:11.5px;color:var(--text-sub);font-weight:600;">排版模板</label>
           <div class="layout-template-grid">
             <button class="layout-tpl-btn active" data-tpl="standard" onclick="setLayoutTemplate('standard')">标准单栏</button>
             <button class="layout-tpl-btn" data-tpl="twocol" onclick="setLayoutTemplate('twocol')">双栏流式</button>
@@ -430,7 +525,7 @@ function buildDocumentHTML(initialData) {
           </div>
         </div>
 
-        <div class="slider-grid" style="margin-bottom:10px;">
+        <div class="slider-grid" style="margin-bottom:12px;">
           <div class="slider-item">
             <label>选项排版模式</label>
             <select id="option-layout-mode" onchange="saveLayoutSettings()">
@@ -449,7 +544,7 @@ function buildDocumentHTML(initialData) {
           </div>
         </div>
 
-        <div class="action-row" style="margin-bottom:10px;">
+        <div class="action-row" style="margin-bottom:12px;">
           <button class="btn-sm" id="btn-size-9" onclick="setQuickFontSize(9,'btn-size-9')">小五 9pt</button>
           <button class="btn-sm active-preset" id="btn-size-105" onclick="setQuickFontSize(10.5,'btn-size-105')">五号 10.5pt</button>
           <button class="btn-sm" id="btn-size-12" onclick="setQuickFontSize(12,'btn-size-12')">小四 12pt</button>
@@ -482,10 +577,10 @@ function buildDocumentHTML(initialData) {
           </div>
         </div>
 
-        <div style="margin-top:12px;">
-          <label style="font-size:11px;color:var(--text-sub);font-weight:600;">高级自定义 CSS</label>
+        <div style="margin-top:14px;">
+          <label style="font-size:11.5px;color:var(--text-sub);font-weight:600;">高级自定义 CSS</label>
           <textarea id="custom-css" style="min-height:80px;font-size:12px;" placeholder=".question-row { margin-bottom: 12px; }"></textarea>
-          <button class="btn-sm" style="margin-top:5px;" onclick="applyCustomCSS()">应用自定义 CSS</button>
+          <button class="btn-sm" style="margin-top:6px;" onclick="applyCustomCSS()">应用自定义 CSS</button>
         </div>
       </div>
 
@@ -508,13 +603,13 @@ function buildDocumentHTML(initialData) {
     <!-- 预览面板 -->
     <div id="panel-preview" class="panel">
       <div class="preview-bar">
-        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="btn-sm" id="btn-fit" style="background:var(--primary);color:#fff;" onclick="setPreviewMode('mobile-fit')">📱 手机</button>
           <button class="btn-sm" id="btn-desktop" onclick="setPreviewMode('desktop')">💻 电脑</button>
           <button class="btn-sm" id="btn-a4" onclick="setPreviewMode('a4-exact')">📄 A4</button>
           <button class="btn-sm" id="btn-clean" onclick="toggleCleanMode()">🧹 净版</button>
         </div>
-        <div style="display:flex;align-items:center;gap:5px;">
+        <div style="display:flex;align-items:center;gap:6px;">
           <span class="mistake-counter" id="mistake-count-text">错题: 0</span>
           <button class="btn-sm" onclick="filterMistakesView()">🔍 仅错题</button>
         </div>
@@ -537,7 +632,7 @@ function buildDocumentHTML(initialData) {
         <button class="export-item highlight" onclick="triggerChromePrint(false)">
           <div>
             <div style="color:var(--primary);font-weight:700;">🖨️ 原生矢量打印 / PDF（整卷）</div>
-            <div style="font-size:11px;color:var(--text-sub);">推荐 · 100% 矢量无损</div>
+            <div style="font-size:11.5px;color:var(--text-sub);margin-top:2px;">推荐 · 100% 矢量无损</div>
           </div><span>➔</span>
         </button>
         <button class="export-item" style="border-color:#fca5a5;background:#fff1f2;" onclick="triggerChromePrint(true)">
@@ -547,13 +642,13 @@ function buildDocumentHTML(initialData) {
           <div><div style="font-weight:700;">🎯 导出错题给 AI</div></div><span>➔</span>
         </button>
         <button class="export-item" onclick="exportDirectPDF(false)">
-          <div><div>📑 整卷直接下载 PDF</div></div><span>➔</span>
+          <div><div style="font-weight:600;">📑 整卷直接下载 PDF</div></div><span>➔</span>
         </button>
         <button class="export-item" onclick="exportStandaloneHTML()">
-          <div><div>🌐 导出独立 HTML</div></div><span>➔</span>
+          <div><div style="font-weight:600;">🌐 导出独立 HTML</div></div><span>➔</span>
         </button>
       </div>
-      <button class="btn-sm" style="width:100%;margin-top:10px;justify-content:center;padding:9px 0;" onclick="closeExportModal()">取消</button>
+      <button class="btn-sm" style="width:100%;margin-top:12px;justify-content:center;padding:10px 0;" onclick="closeExportModal()">取消</button>
     </div>
   </div>
 
@@ -580,6 +675,20 @@ function buildDocumentHTML(initialData) {
       '--paper-padding-v': '14mm',
       '--paper-padding-h': '14mm'
     };
+
+    // ========== Toast ==========
+    function showToast(msg, type) {
+      type = type || 'info';
+      var container = document.getElementById('toast-container');
+      var el = document.createElement('div');
+      el.className = 'toast ' + type;
+      el.textContent = msg;
+      container.appendChild(el);
+      setTimeout(function() {
+        el.classList.add('toast-out');
+        setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 260);
+      }, 2600);
+    }
 
     // ========== 初始化 ==========
     window.addEventListener('DOMContentLoaded', function() {
@@ -614,7 +723,6 @@ function buildDocumentHTML(initialData) {
 
     function registerServiceWorker() {
       if ('serviceWorker' in navigator) {
-        // 简单离线缓存核心 CDN 资源
         var swCode = \`
           const CACHE = 'examcraft-v1';
           const ASSETS = [
@@ -663,9 +771,9 @@ function buildDocumentHTML(initialData) {
     }
     function saveCurrentToHistory() {
       var raw = document.getElementById('paper-json').value.trim();
-      if (!raw) { alert('当前没有试卷数据'); return; }
+      if (!raw) { showToast('当前没有试卷数据', 'warning'); return; }
       var data;
-      try { data = parseJSONWithTolerance(raw); } catch(e) { alert('JSON 无效，无法保存'); return; }
+      try { data = parseJSONWithTolerance(raw); } catch(e) { showToast('JSON 无效，无法保存', 'error'); return; }
       var title = data.paper_title || '未命名试卷';
       var list = getHistory();
       var id = Date.now().toString(36);
@@ -677,7 +785,7 @@ function buildDocumentHTML(initialData) {
       });
       saveHistory(list);
       renderHistoryList();
-      alert('✅ 已保存到历史库');
+      showToast('已保存到历史库', 'success');
     }
     function loadFromHistory(id) {
       var list = getHistory();
@@ -686,25 +794,27 @@ function buildDocumentHTML(initialData) {
       document.getElementById('paper-json').value = JSON.stringify(item.data, null, 2);
       renderPaperFromTextarea(true);
       setTab('preview');
+      showToast('已加载历史试卷', 'success');
     }
     function deleteFromHistory(id) {
       if (!confirm('确定删除这条历史？')) return;
       var list = getHistory().filter(function(x){ return x.id !== id; });
       saveHistory(list);
       renderHistoryList();
+      showToast('已删除', 'info');
     }
     function renderHistoryList() {
       var list = getHistory();
       var container = document.getElementById('history-list');
       if (!list.length) {
-        container.innerHTML = '<div style="padding:12px;color:var(--text-sub);font-size:12px;text-align:center;">暂无历史记录</div>';
+        container.innerHTML = '<div style="padding:16px;color:var(--text-sub);font-size:12.5px;text-align:center;">暂无历史记录</div>';
         return;
       }
       container.innerHTML = list.map(function(item) {
         return '<div class="history-item">' +
-          '<div class="title" onclick="loadFromHistory(\\''+item.id+'\\')" style="cursor:pointer;">' + (item.title || '未命名') + '</div>' +
+          '<div class="title" onclick="loadFromHistory(\\''+item.id+'\\')">' + (item.title || '未命名') + '</div>' +
           '<div class="time">' + item.time + '</div>' +
-          '<button class="btn-sm danger" style="padding:3px 7px;font-size:11px;" onclick="deleteFromHistory(\\''+item.id+'\\')">删</button>' +
+          '<button class="btn-sm danger" style="padding:4px 8px;font-size:11px;" onclick="deleteFromHistory(\\''+item.id+'\\')">删</button>' +
           '</div>';
       }).join('');
     }
@@ -719,7 +829,7 @@ function buildDocumentHTML(initialData) {
     function resetSystemPrompt() {
       document.getElementById('ai-system-prompt').value = '';
       try { localStorage.removeItem('ai_system_prompt'); } catch(e){}
-      alert('已恢复默认系统提示词');
+      showToast('已恢复默认系统提示词', 'info');
     }
     function getSystemPrompt() {
       var custom = (document.getElementById('ai-system-prompt').value || '').trim();
@@ -742,8 +852,8 @@ function buildDocumentHTML(initialData) {
         localStorage.setItem('ai_base_url', document.getElementById('ai-base-url').value.trim());
         localStorage.setItem('ai_api_key', document.getElementById('ai-api-key').value.trim());
         localStorage.setItem('ai_model_name', document.getElementById('ai-model-name').value.trim());
-        alert('✅ API 配置已保存');
-      } catch(e){ alert('保存失败'); }
+        showToast('API 配置已保存', 'success');
+      } catch(e){ showToast('保存失败', 'error'); }
     }
 
     // ========== 排版 ==========
@@ -851,7 +961,7 @@ function buildDocumentHTML(initialData) {
       syncSlidersFromVars();
       applyCustomCSS(true);
       saveLayoutSettings();
-      alert('✅ 已恢复默认排版');
+      showToast('已恢复默认排版', 'success');
     }
     function applyCustomCSS(silent) {
       var css = document.getElementById('custom-css').value || '';
@@ -863,7 +973,10 @@ function buildDocumentHTML(initialData) {
         style.textContent = css;
         document.head.appendChild(style);
       }
-      if (!silent) saveLayoutSettings();
+      if (!silent) {
+        saveLayoutSettings();
+        showToast('自定义 CSS 已应用', 'success');
+      }
     }
 
     function toggleCleanMode() {
@@ -874,10 +987,12 @@ function buildDocumentHTML(initialData) {
         sheet.classList.add('clean-mode');
         btn.style.background = 'var(--primary)';
         btn.style.color = '#fff';
+        showToast('已开启净版模式', 'info');
       } else {
         sheet.classList.remove('clean-mode');
         btn.style.background = '';
         btn.style.color = '';
+        showToast('已关闭净版模式', 'info');
       }
     }
 
@@ -949,14 +1064,14 @@ function buildDocumentHTML(initialData) {
 
     function forceRepairJSON() {
       var raw = document.getElementById('paper-json').value.trim();
-      if (!raw) { alert('没有内容可修复'); return; }
+      if (!raw) { showToast('没有内容可修复', 'warning'); return; }
       try {
         var data = parseJSONWithTolerance(raw);
         document.getElementById('paper-json').value = JSON.stringify(data, null, 2);
         renderPaperFromTextarea(true);
-        alert('✅ 已完成强校验与自动修复');
+        showToast('已完成强校验与自动修复', 'success');
       } catch(e) {
-        alert('修复失败：' + (e.message || e));
+        showToast('修复失败：' + (e.message || e), 'error');
       }
     }
 
@@ -1020,7 +1135,7 @@ function buildDocumentHTML(initialData) {
       showRenderStatus(true);
       var raw = document.getElementById('paper-json').value.trim();
       if (!raw) {
-        document.getElementById('paper-mount-point').innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">暂无试卷数据，请粘贴 JSON 或使用 AI 生成</div>';
+        document.getElementById('paper-mount-point').innerHTML = '<div style="text-align:center;padding:48px 20px;color:#94a3b8;font-size:14px;">暂无试卷数据<br><span style="font-size:12px;">请粘贴 JSON 或使用 AI 生成</span></div>';
         showRenderStatus(false);
         return false;
       }
@@ -1030,7 +1145,7 @@ function buildDocumentHTML(initialData) {
         currentPaperData = data;
       } catch(err) {
         showRenderStatus(false);
-        if (force) alert('JSON 解析错误：' + (err.message||err));
+        if (force) showToast('JSON 解析错误：' + (err.message||err), 'error');
         return false;
       }
 
@@ -1081,7 +1196,7 @@ function buildDocumentHTML(initialData) {
           html += numHtml + '<span class="q-score">(' + (q.score||'') + '分) </span>' + (q.stem||'');
 
           if (q.tags && q.tags.length) {
-            html += '<div style="margin-top:3px;">' + q.tags.map(function(t){ return '<span class="tag">' + t + '</span>'; }).join('') + '</div>';
+            html += '<div style="margin-top:4px;">' + q.tags.map(function(t){ return '<span class="tag">' + t + '</span>'; }).join('') + '</div>';
           }
 
           if (q.options && q.options.length) {
@@ -1111,7 +1226,6 @@ function buildDocumentHTML(initialData) {
 
       if (useFlow) html += '</div>';
 
-      // 使用 requestAnimationFrame 提升渲染性能
       requestAnimationFrame(function() {
         sheet.innerHTML = html;
         renderMathSafely(sheet);
@@ -1127,7 +1241,7 @@ function buildDocumentHTML(initialData) {
       var apiKey = document.getElementById('ai-api-key').value.trim();
       var model = document.getElementById('ai-model-name').value.trim();
       if (!baseUrl || !apiKey || !model) {
-        alert('请先填写并保存 API 配置');
+        showToast('请先填写并保存 API 配置', 'warning');
         return;
       }
       var systemPrompt = getSystemPrompt();
@@ -1135,7 +1249,7 @@ function buildDocumentHTML(initialData) {
 
       if (type === 'mistake_variants') {
         if (mistakeQuestionIds.size === 0) {
-          alert('请先勾选错题');
+          showToast('请先勾选错题', 'warning');
           return;
         }
         var mistakes = getMistakeQuestionsList();
@@ -1180,7 +1294,6 @@ function buildDocumentHTML(initialData) {
         }
         content = content.trim();
 
-        // 自动修复后写入
         try {
           var repaired = parseJSONWithTolerance(content);
           content = JSON.stringify(repaired, null, 2);
@@ -1190,11 +1303,11 @@ function buildDocumentHTML(initialData) {
         if (renderPaperFromTextarea(true)) {
           saveCurrentToHistory();
           setTab('preview');
-          alert('🎉 生成完成并已自动保存到历史库');
+          showToast('生成完成并已自动保存', 'success');
         }
       } catch(err) {
         badge.style.display = 'none';
-        alert('生成失败：' + (err.message || err));
+        showToast('生成失败：' + (err.message || err), 'error');
       }
     }
 
@@ -1203,20 +1316,20 @@ function buildDocumentHTML(initialData) {
       var apiKey = document.getElementById('ai-api-key').value.trim();
       var model = document.getElementById('ai-model-name').value.trim();
       if (!baseUrl || !apiKey || !model) {
-        alert('请先填写并保存 API 配置');
+        showToast('请先填写并保存 API 配置', 'warning');
         return;
       }
 
       var questions = [];
       if (onlyMistakes) {
         if (mistakeQuestionIds.size === 0) {
-          alert('请先勾选错题');
+          showToast('请先勾选错题', 'warning');
           return;
         }
         questions = getMistakeQuestionsList();
       } else {
         if (!currentPaperData) {
-          alert('请先加载试卷');
+          showToast('请先加载试卷', 'warning');
           return;
         }
         (currentPaperData.sections || []).forEach(function(sec) {
@@ -1224,7 +1337,7 @@ function buildDocumentHTML(initialData) {
         });
       }
       if (!questions.length) {
-        alert('没有可解析的题目');
+        showToast('没有可解析的题目', 'warning');
         return;
       }
 
@@ -1256,13 +1369,13 @@ function buildDocumentHTML(initialData) {
         if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
 
         var content = data.choices[0].message.content.trim();
-        // 弹窗显示解析
         var w = window.open('', '_blank');
-        w.document.write('<html><head><title>答案解析</title><meta charset="utf-8"><style>body{font-family:sans-serif;padding:20px;line-height:1.7;max-width:800px;margin:0 auto;} pre{white-space:pre-wrap;}</style></head><body><h2>答案解析</h2><pre>' + content.replace(/</g,'&lt;') + '</pre></body></html>');
+        w.document.write('<html><head><title>答案解析</title><meta charset="utf-8"><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:24px;line-height:1.75;max-width:820px;margin:0 auto;color:#1e293b;} pre{white-space:pre-wrap;background:#f8fafc;padding:16px;border-radius:12px;}</style></head><body><h2 style="margin-top:0;">答案解析</h2><pre>' + content.replace(/</g,'&lt;') + '</pre></body></html>');
         w.document.close();
+        showToast('解析已生成', 'success');
       } catch(err) {
         badge.style.display = 'none';
-        alert('解析生成失败：' + (err.message || err));
+        showToast('解析生成失败：' + (err.message || err), 'error');
       }
     }
 
@@ -1288,6 +1401,7 @@ function buildDocumentHTML(initialData) {
         var id = parseInt(row.getAttribute('data-qid'));
         row.style.display = isFilteringMistakes ? (mistakeQuestionIds.has(id) ? 'block' : 'none') : 'block';
       });
+      showToast(isFilteringMistakes ? '仅显示错题' : '显示全部题目', 'info');
     }
     function getMistakeQuestionsList() {
       if (!currentPaperData) return [];
@@ -1302,10 +1416,10 @@ function buildDocumentHTML(initialData) {
     function exportMistakeJSONPrompt() {
       closeExportModal();
       var mistakes = getMistakeQuestionsList();
-      if (mistakes.length === 0) { alert('尚未勾选错题'); return; }
+      if (mistakes.length === 0) { showToast('尚未勾选错题', 'warning'); return; }
       setTab('ai');
       document.getElementById('ai-user-prompt').value = '请针对以下 ' + mistakes.length + ' 道错题出同等考点变式：\\n' + JSON.stringify(mistakes, null, 2);
-      alert('已填入 AI 提示框');
+      showToast('已填入 AI 提示框', 'success');
     }
 
     // ========== 预览模式 ==========
@@ -1378,7 +1492,7 @@ function buildDocumentHTML(initialData) {
       if (scroller) { scroller.scrollLeft = 0; scroller.scrollTop = 0; }
       window.scrollTo(0,0);
       if (mistakeOnly) {
-        if (mistakeQuestionIds.size === 0) { alert('请先勾选错题'); return; }
+        if (mistakeQuestionIds.size === 0) { showToast('请先勾选错题', 'warning'); return; }
         document.querySelectorAll('.question-row').forEach(function(row){
           var id = parseInt(row.getAttribute('data-qid'));
           row.style.display = mistakeQuestionIds.has(id) ? 'block' : 'none';
@@ -1388,7 +1502,6 @@ function buildDocumentHTML(initialData) {
       }
       if (document.fonts && document.fonts.ready) await document.fonts.ready;
       await new Promise(function(r){ requestAnimationFrame(r); });
-      // 额外等待一帧保证公式渲染完成
       await new Promise(function(r){ setTimeout(r, 80); });
       window.print();
       document.querySelectorAll('.question-row').forEach(function(row){ row.style.display = 'block'; });
@@ -1398,7 +1511,7 @@ function buildDocumentHTML(initialData) {
       closeExportModal();
       setPreviewMode('a4-exact');
       if (mistakeOnly) {
-        if (mistakeQuestionIds.size === 0) { alert('请先勾选错题'); return; }
+        if (mistakeQuestionIds.size === 0) { showToast('请先勾选错题', 'warning'); return; }
         document.querySelectorAll('.question-row').forEach(function(row){
           var id = parseInt(row.getAttribute('data-qid'));
           row.style.display = mistakeQuestionIds.has(id) ? 'block' : 'none';
@@ -1418,6 +1531,7 @@ function buildDocumentHTML(initialData) {
       if (window.html2pdf) {
         window.html2pdf().set(opt).from(element).save().then(function(){
           document.querySelectorAll('.question-row').forEach(function(row){ row.style.display='block'; });
+          showToast('PDF 已生成', 'success');
         });
       }
     }
@@ -1428,6 +1542,7 @@ function buildDocumentHTML(initialData) {
       var mount = document.getElementById('paper-mount-point').innerHTML;
       var fullHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+filename+'</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css"><style>@page{size:A4;margin:12mm;}body{font-family:"Songti SC",SimSun,serif;padding:16px;font-size:10.5pt;line-height:1.65;}.paper-title{text-align:center;font-size:1.5em;}.paper-meta{display:flex;justify-content:space-around;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:14px;}.section-title{font-weight:bold;margin:14px 0 8px;}.question-row{break-inside:avoid;margin-bottom:16px;}.q-layout-box{display:flex;gap:12px;}.q-cell-content{flex:1;}.q-cell-graphic{width:140px;}.options-grid.cols-4{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;}.options-grid.cols-2{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;}.options-grid.cols-1{display:flex;flex-direction:column;gap:3px;}.rule-blank{height:20px;}.tag{display:inline-block;padding:1px 6px;margin:1px;border-radius:99px;font-size:10px;background:#e0e7ff;color:#3730a3;}</style></head><body>'+mount+'</body></html>';
       downloadBlob(fullHtml, filename, 'text/html;charset=utf-8');
+      showToast('HTML 已导出', 'success');
     }
 
     async function pasteFromClipboard() {
@@ -1435,9 +1550,9 @@ function buildDocumentHTML(initialData) {
         var text = await navigator.clipboard.readText();
         if (text) {
           document.getElementById('paper-json').value = text;
-          if (renderPaperFromTextarea(true)) { setTab('preview'); alert('✅ 已载入'); }
+          if (renderPaperFromTextarea(true)) { setTab('preview'); showToast('已从剪贴板载入', 'success'); }
         }
-      } catch(e) { alert('请长按输入框粘贴，或使用导入文件'); }
+      } catch(e) { showToast('请长按输入框粘贴，或使用导入文件', 'warning'); }
     }
     function triggerFileInput() { document.getElementById('file-uploader').click(); }
     function handleFileUpload(event) {
@@ -1446,7 +1561,7 @@ function buildDocumentHTML(initialData) {
       var reader = new FileReader();
       reader.onload = function(e) {
         document.getElementById('paper-json').value = e.target.result;
-        if (renderPaperFromTextarea(true)) { setTab('preview'); alert('✅ 文件已载入'); }
+        if (renderPaperFromTextarea(true)) { setTab('preview'); showToast('文件已载入', 'success'); }
       };
       reader.readAsText(file, 'UTF-8');
       event.target.value = '';
@@ -1455,6 +1570,7 @@ function buildDocumentHTML(initialData) {
       if (confirm('确定清空？')) {
         document.getElementById('paper-json').value = '';
         renderPaperFromTextarea(true);
+        showToast('已清空', 'info');
       }
     }
   </script>
