@@ -225,12 +225,10 @@ function buildDocumentHTML(initialData) {
     }
 
     /* ========== 排版模板核心样式 ========== */
-    /* 标准单栏 */
     .layout-standard .q-layout-box { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; width: 100%; }
     .layout-standard .q-cell-content { flex: 1 1 auto; min-width: 0; }
     .layout-standard .q-cell-graphic { width: var(--diagram-width); flex: 0 0 var(--diagram-width); display: flex; justify-content: center; }
 
-    /* 双栏流式（适合选择题） */
     .layout-twocol .questions-flow {
       column-count: 2; column-gap: 18px; column-rule: 1px solid #e2e8f0;
     }
@@ -238,13 +236,11 @@ function buildDocumentHTML(initialData) {
     .layout-twocol .q-layout-box { display: block; }
     .layout-twocol .q-cell-graphic { width: 100%; max-width: 140px; margin: 6px auto; text-align: center; }
 
-    /* 紧凑微型插图（图在选项区右侧小图） */
     .layout-compact .q-layout-box { display: flex; gap: 10px; align-items: flex-start; }
     .layout-compact .q-cell-content { flex: 1; min-width: 0; }
     .layout-compact .q-cell-graphic { width: 110px; flex: 0 0 110px; }
     .layout-compact .q-cell-graphic svg { max-width: 110px; height: auto; }
 
-    /* 选项全换行 */
     .layout-option-newline .options-grid,
     .layout-option-newline .options-grid.cols-4,
     .layout-option-newline .options-grid.cols-2,
@@ -252,7 +248,6 @@ function buildDocumentHTML(initialData) {
       display: flex !important; flex-direction: column !important; gap: 3px !important;
     }
 
-    /* 题号样式 */
     .qnum-dot .q-num { font-weight: bold; }
     .qnum-bracket .q-num::before { content: "（"; }
     .qnum-bracket .q-num::after { content: "）"; }
@@ -775,12 +770,15 @@ function buildDocumentHTML(initialData) {
         if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
 
         var content = data.choices[0].message.content.trim();
-        var fence = '```';
+        // 安全处理 markdown 代码块（避免模板字符串中出现三个反引号）
+        var fence = String.fromCharCode(96, 96, 96);
         if (content.indexOf(fence) === 0) {
-          var nl = content.indexOf('\\n');
-          content = nl !== -1 ? content.substring(nl+1) : content.substring(3);
+          var nl = content.indexOf(String.fromCharCode(10));
+          content = nl !== -1 ? content.substring(nl + 1) : content.substring(3);
         }
-        if (content.lastIndexOf(fence) !== -1) content = content.substring(0, content.lastIndexOf(fence));
+        if (content.lastIndexOf(fence) !== -1) {
+          content = content.substring(0, content.lastIndexOf(fence));
+        }
         content = content.trim();
 
         document.getElementById('paper-json').value = content;
