@@ -1,7 +1,3 @@
-var pendingSharePdfFile = null;
-var pendingSharePdfBlob = null;
-var pendingShareFilename = '';
-
 function getResolvedFileName(ext, isMistake) {
   var custom = (document.getElementById('custom-filename-input').value || '').trim();
   var prefix = isMistake ? '错题集_' : '试卷_';
@@ -17,8 +13,6 @@ function getResolvedFileName(ext, isMistake) {
 
 function openExportModal() {
   renderPaperFromTextarea(true);
-  var banner = document.getElementById('ready-share-banner');
-  if (banner) banner.style.display = 'none';
   document.getElementById('export-modal').classList.add('active');
 }
 
@@ -33,108 +27,6 @@ function downloadBlob(content, filename, type) {
   a.href = url; a.download = filename;
   document.body.appendChild(a); a.click();
   setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 300);
-}
-
-async function openWithExternalPdfApp(mistakeOnly) {
-  if (mistakeOnly && mistakeQuestionIds.size === 0) {
-    showToast('请先在预览页勾选错题', 'warning');
-    return;
-  }
-
-  closeExportModal();
-
-  // 确保切换到预览面板，防止因 #panel-preview 处于隐藏状态导致 html2canvas 渲染出空白页
-  setTab('preview');
-  setPreviewMode('a4-exact');
-
-  document.querySelectorAll('.question-row').forEach(function(row){
-    var id = parseInt(row.getAttribute('data-qid'));
-    row.style.display = mistakeOnly ? (mistakeQuestionIds.has(id) ? 'block' : 'none') : 'block';
-  });
-
-  showRenderStatus(true);
-  showToast('正在生成高清 PDF 并调起外部应用...', 'info');
-
-  if (document.fonts && document.fonts.ready) await document.fonts.ready;
-  await new Promise(function(r){ requestAnimationFrame(r); });
-
-  var element = document.getElementById('paper-mount-point');
-  var filename = getResolvedFileName('pdf', !!mistakeOnly);
-  var opt = {
-    margin: [12, 12, 12, 12],
-    filename: filename,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2.5, useCORS: true, backgroundColor: '#ffffff' },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['avoid-all', 'css', 'legacy'], avoid: ['.question-row', '.section-title'] }
-  };
-
-  try {
-    var pdfBlob = await window.html2pdf().set(opt).from(element).outputPdf('blob');
-    var pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
-
-    pendingSharePdfBlob = pdfBlob;
-    pendingSharePdfFile = pdfFile;
-    pendingShareFilename = filename;
-
-    // 恢复所有题目显示
-    document.querySelectorAll('.question-row').forEach(function(row){ row.style.display = 'block'; });
-    showRenderStatus(false);
-
-    // 1. 优先直接调起手机系统「用其他应用打开 / 分享」原生面板
-    if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-      try {
-        await navigator.share({
-          files: [pdfFile],
-          title: filename
-        });
-        return;
-      } catch (shareErr) {
-        if (shareErr && shareErr.name === 'AbortError') return; // 用户主动取消
-        // 若因试卷较长导致生成耗时超过浏览器手势有效期 (NotAllowedError)，弹出单次点击横幅立即调起
-        var banner = document.getElementById('ready-share-banner');
-        if (banner) {
-          banner.style.display = 'block';
-          document.getElementById('export-modal').classList.add('active');
-          return;
-        }
-      }
-    }
-
-    // 2. 电脑端或不支持文件级 Web Share 的浏览器：直接打开 PDF 流
-    openPdfBlobFallback(pdfBlob, filename);
-  } catch (err) {
-    document.querySelectorAll('.question-row').forEach(function(row){ row.style.display = 'block'; });
-    showRenderStatus(false);
-    showToast('生成 PDF 失败：' + (err.message || err), 'error');
-  }
-}
-
-async function triggerPendingPdfShare() {
-  if (!pendingSharePdfFile) return;
-  try {
-    if (navigator.canShare && navigator.canShare({ files: [pendingSharePdfFile] })) {
-      await navigator.share({
-        files: [pendingSharePdfFile],
-        title: pendingShareFilename
-      });
-      closeExportModal();
-      return;
-    }
-  } catch (err) {
-    if (err && err.name === 'AbortError') return;
-  }
-  closeExportModal();
-  openPdfBlobFallback(pendingSharePdfBlob, pendingShareFilename);
-}
-
-function openPdfBlobFallback(pdfBlob, filename) {
-  if (!pdfBlob) return;
-  var blobUrl = URL.createObjectURL(pdfBlob);
-  var win = window.open(blobUrl, '_blank');
-  if (!win) {
-    downloadBlob(pdfBlob, filename, 'application/pdf');
-  }
 }
 
 async function triggerChromePrint(mistakeOnly) {
@@ -157,14 +49,10 @@ async function triggerChromePrint(mistakeOnly) {
 }
 
 async function exportDirectPDF(mistakeOnly) {
-  if (mistakeOnly && mistakeQuestionIds.size === 0) {
-    showToast('请先勾选错题', 'warning');
-    return;
-  }
   closeExportModal();
-  setTab('preview');
   setPreviewMode('a4-exact');
   if (mistakeOnly) {
+    if (mistakeQuestionIds.size === 0) { showToast('请先勾选错题', 'warning'); return; }
     document.querySelectorAll('.question-row').forEach(function(row){
       var id = parseInt(row.getAttribute('data-qid'));
       row.style.display = mistakeQuestionIds.has(id) ? 'block' : 'none';
