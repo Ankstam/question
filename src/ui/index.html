@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>ExamCraft · 纯净排版引擎</title>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/mhchem.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    /*__INJECT_STYLES__*/
+  </style>
+</head>
+<body>
+  <div id="toast-container"></div>
+  <div class="render-status" id="render-status">渲染中...</div>
+
+  <header class="app-header">
+    <div class="header-bar">
+      <h2>ExamCraft <span class="badge">纯净版</span></h2>
+      <div style="font-size:11.5px;color:var(--text-sub);" id="offline-status">在线</div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-nav-edit" onclick="setTab('edit')">✏️ 数据与排版</button>
+      <button class="tab-btn" id="tab-nav-preview" onclick="setTab('preview')">📄 预览与错题</button>
+    </div>
+  </header>
+
+  <main class="main-body">
+    <!-- 编辑面板 -->
+    <div id="panel-edit" class="panel active">
+      <div class="card">
+        <div class="card-title">
+          <span>试卷本地历史库</span>
+          <button class="btn-sm" onclick="saveCurrentToHistory()">💾 保存当前试卷</button>
+        </div>
+        <div class="history-list" id="history-list">
+          <div style="padding:16px;color:var(--text-sub);font-size:12.5px;text-align:center;">暂无历史记录</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">文件导出命名</div>
+        <input type="text" id="custom-filename-input" placeholder="留空则按时间戳自动生成">
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>排版模板与模式</span>
+          <button class="btn-sm" onclick="resetLayoutToDefault()">↺ 恢复默认</button>
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <label style="font-size:11.5px;color:var(--text-sub);font-weight:600;">排版模板</label>
+          <div class="layout-template-grid">
+            <button class="layout-tpl-btn active" data-tpl="standard" onclick="setLayoutTemplate('standard')">标准单栏</button>
+            <button class="layout-tpl-btn" data-tpl="twocol" onclick="setLayoutTemplate('twocol')">双栏流式</button>
+            <button class="layout-tpl-btn" data-tpl="compact" onclick="setLayoutTemplate('compact')">紧凑微型图</button>
+            <button class="layout-tpl-btn" data-tpl="option-newline" onclick="setLayoutTemplate('option-newline')">选项全换行</button>
+          </div>
+        </div>
+
+        <div class="slider-grid" style="margin-bottom:12px;">
+          <div class="slider-item">
+            <label>选项排版模式</label>
+            <select id="option-layout-mode" onchange="saveLayoutSettings()">
+              <option value="auto">自动网格</option>
+              <option value="oneline">每选项一行</option>
+              <option value="inline-diagram">选项区+微型图</option>
+            </select>
+          </div>
+          <div class="slider-item">
+            <label>题号样式</label>
+            <select id="qnum-style" onchange="saveLayoutSettings()">
+              <option value="dot">1. （默认）</option>
+              <option value="bracket">（1）</option>
+              <option value="right">右对齐括号栏</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="action-row" style="margin-bottom:12px;">
+          <button class="btn-sm" id="btn-size-9" onclick="setQuickFontSize(9,'btn-size-9')">小五 9pt</button>
+          <button class="btn-sm active-preset" id="btn-size-105" onclick="setQuickFontSize(10.5,'btn-size-105')">五号 10.5pt</button>
+          <button class="btn-sm" id="btn-size-12" onclick="setQuickFontSize(12,'btn-size-12')">小四 12pt</button>
+        </div>
+
+        <div class="slider-grid">
+          <div class="slider-item">
+            <label>正文字号: <span id="val-font-size">10.5pt</span></label>
+            <input type="range" id="input-range-fontsize" min="8.5" max="14" step="0.5" value="10.5" oninput="updateStyleVar('--paper-font-size',this.value+'pt','val-font-size')">
+          </div>
+          <div class="slider-item">
+            <label>行高: <span id="val-line-height">1.65</span></label>
+            <input type="range" id="input-range-lineheight" min="1.3" max="2.0" step="0.05" value="1.65" oninput="updateStyleVar('--paper-line-height',this.value,'val-line-height')">
+          </div>
+          <div class="slider-item">
+            <label>大题间距: <span id="val-q-spacing">18px</span></label>
+            <input type="range" id="input-range-qspacing" min="8" max="36" value="18" oninput="updateStyleVar('--q-spacing',this.value+'px','val-q-spacing')">
+          </div>
+          <div class="slider-item">
+            <label>留白行高: <span id="val-rule-height">22px</span></label>
+            <input type="range" id="input-range-ruleheight" min="14" max="32" value="22" oninput="updateStyleVar('--rule-height',this.value+'px','val-rule-height')">
+          </div>
+          <div class="slider-item">
+            <label>图栏宽度: <span id="val-diag-width">160px</span></label>
+            <input type="range" id="input-range-diagwidth" min="100" max="240" value="160" oninput="updateStyleVar('--diagram-width',this.value+'px','val-diag-width')">
+          </div>
+          <div class="slider-item">
+            <label>选项间距: <span id="val-option-gap">4px</span></label>
+            <input type="range" id="input-range-optiongap" min="2" max="12" value="4" oninput="updateStyleVar('--option-gap',this.value+'px','val-option-gap')">
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <label style="font-size:11.5px;color:var(--text-sub);font-weight:600;">高级自定义 CSS</label>
+          <textarea id="custom-css" style="min-height:80px;font-size:12px;" placeholder=".question-row { margin-bottom: 12px; }"></textarea>
+          <button class="btn-sm" style="margin-top:6px;" onclick="applyCustomCSS()">应用自定义 CSS</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>试卷 JSON 数据</span>
+          <span style="font-size:10px;color:var(--text-sub);">仅保留标题 + 题目</span>
+        </div>
+        <div class="action-row">
+          <button class="btn-sm" onclick="pasteFromClipboard()">📋 粘贴</button>
+          <button class="btn-sm" onclick="triggerFileInput()">📂 导入</button>
+          <button class="btn-sm" onclick="forceRepairJSON()">🔧 强制修复</button>
+          <button class="btn-sm danger" onclick="clearJson()">🗑️ 清空</button>
+          <input type="file" id="file-uploader" accept=".json,.txt" style="display:none;" onchange="handleFileUpload(event)">
+        </div>
+        <textarea id="paper-json" spellcheck="false"><!--__INJECT_INITIAL_JSON__--></textarea>
+      </div>
+    </div>
+
+    <!-- 预览面板 -->
+    <div id="panel-preview" class="panel">
+      <div class="preview-bar">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn-sm" id="btn-fit" style="background:var(--primary);color:#fff;" onclick="setPreviewMode('mobile-fit')">📱 手机</button>
+          <button class="btn-sm" id="btn-desktop" onclick="setPreviewMode('desktop')">💻 电脑</button>
+          <button class="btn-sm" id="btn-a4" onclick="setPreviewMode('a4-exact')">📄 A4</button>
+          <button class="btn-sm" id="btn-clean" style="background:var(--primary);color:#fff;" onclick="toggleCleanMode()">🧹 纯净模式</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mistake-counter" id="mistake-count-text">错题: 0</span>
+          <button class="btn-sm" onclick="filterMistakesView()">🔍 仅错题</button>
+        </div>
+      </div>
+      <div class="paper-scroller">
+        <div class="paper-sheet mobile-fit layout-standard clean-mode" id="paper-mount-point"></div>
+      </div>
+    </div>
+  </main>
+
+  <div class="bottom-bar">
+    <button class="btn btn-secondary" onclick="renderPaperFromTextarea(true)">🔄 同步</button>
+    <button class="btn btn-primary" onclick="openExportModal()">📥 导出/打印</button>
+  </div>
+
+  <div class="modal-overlay" id="export-modal" onclick="closeExportModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">导出中心</div>
+      <div class="export-grid">
+        <button class="export-item highlight" onclick="triggerChromePrint(false)">
+          <div>
+            <div style="color:var(--primary);font-weight:700;">🖨️ 原生矢量打印 / PDF（整卷）</div>
+            <div style="font-size:11.5px;color:var(--text-sub);margin-top:2px;">推荐 · 100% 矢量无损</div>
+          </div><span>➔</span>
+        </button>
+        <button class="export-item" style="border-color:#fca5a5;background:#fff1f2;" onclick="triggerChromePrint(true)">
+          <div><div style="color:var(--danger);font-weight:700;">📑 仅错题矢量打印 / PDF</div></div><span>➔</span>
+        </button>
+        <button class="export-item" onclick="exportDirectPDF(false)">
+          <div><div style="font-weight:600;">📑 整卷直接下载 PDF</div></div><span>➔</span>
+        </button>
+        <button class="export-item" onclick="exportStandaloneHTML()">
+          <div><div style="font-weight:600;">🌐 导出独立 HTML</div></div><span>➔</span>
+        </button>
+      </div>
+      <button class="btn-sm" style="width:100%;margin-top:12px;justify-content:center;padding:10px 0;" onclick="closeExportModal()">取消</button>
+    </div>
+  </div>
+
+  <script>
+    /*__INJECT_CLIENT_SCRIPTS__*/
+  </script>
+</body>
+</html>
