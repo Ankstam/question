@@ -41,10 +41,35 @@ function setLayoutTemplate(tpl, silent) {
   });
   var sheet = document.getElementById('paper-mount-point');
   if (sheet) {
-    sheet.classList.remove('layout-standard','layout-twocol','layout-compact','layout-option-newline');
+    sheet.classList.remove('layout-standard','layout-twocol','layout-compact','layout-option-newline','layout-answer');
     sheet.classList.add('layout-' + tpl);
   }
+
+  // 选中答案解析模板时，自动应用零留白高密参数
+  if (tpl === 'answer') {
+    applyAnswerPreset();
+  }
+
   if (!silent) saveLayoutSettings();
+}
+
+function applyAnswerPreset() {
+  var preset = {
+    '--paper-font-size': '9pt',
+    '--paper-line-height': '1.28',
+    '--q-spacing': '4px',
+    '--rule-height': '0px',
+    '--diagram-width': '100px',
+    '--option-gap': '2px'
+  };
+  Object.keys(preset).forEach(function(k){
+    document.documentElement.style.setProperty(k, preset[k]);
+    updateLabelFromVar(k, preset[k]);
+  });
+  document.querySelectorAll('.action-row .btn-sm').forEach(function(b){ b.classList.remove('active-preset'); });
+  var b9 = document.getElementById('btn-size-9');
+  if (b9) b9.classList.add('active-preset');
+  syncSlidersFromVars();
 }
 
 function updateStyleVar(varName, value, labelId) {
@@ -71,12 +96,24 @@ function updateLabelFromVar(varName, value) {
 
 function syncSlidersFromVars() {
   var get = function(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); };
-  if (document.getElementById('input-range-fontsize')) document.getElementById('input-range-fontsize').value = parseFloat(get('--paper-font-size'))||10.5;
-  if (document.getElementById('input-range-lineheight')) document.getElementById('input-range-lineheight').value = parseFloat(get('--paper-line-height'))||1.65;
-  if (document.getElementById('input-range-qspacing')) document.getElementById('input-range-qspacing').value = parseInt(get('--q-spacing'))||18;
-  if (document.getElementById('input-range-ruleheight')) document.getElementById('input-range-ruleheight').value = parseInt(get('--rule-height'))||22;
-  if (document.getElementById('input-range-diagwidth')) document.getElementById('input-range-diagwidth').value = parseInt(get('--diagram-width'))||160;
-  if (document.getElementById('input-range-optiongap')) document.getElementById('input-range-optiongap').value = parseInt(get('--option-gap'))||4;
+  
+  var fs = parseFloat(get('--paper-font-size'));
+  if (document.getElementById('input-range-fontsize')) document.getElementById('input-range-fontsize').value = isNaN(fs) ? 10.5 : fs;
+  
+  var lh = parseFloat(get('--paper-line-height'));
+  if (document.getElementById('input-range-lineheight')) document.getElementById('input-range-lineheight').value = isNaN(lh) ? 1.65 : lh;
+  
+  var qs = parseInt(get('--q-spacing'));
+  if (document.getElementById('input-range-qspacing')) document.getElementById('input-range-qspacing').value = isNaN(qs) ? 18 : qs;
+  
+  var rh = parseInt(get('--rule-height'));
+  if (document.getElementById('input-range-ruleheight')) document.getElementById('input-range-ruleheight').value = isNaN(rh) ? 22 : rh;
+  
+  var dw = parseInt(get('--diagram-width'));
+  if (document.getElementById('input-range-diagwidth')) document.getElementById('input-range-diagwidth').value = isNaN(dw) ? 160 : dw;
+  
+  var og = parseInt(get('--option-gap'));
+  if (document.getElementById('input-range-optiongap')) document.getElementById('input-range-optiongap').value = isNaN(og) ? 4 : og;
 }
 
 function setQuickFontSize(pt, btnId) {
