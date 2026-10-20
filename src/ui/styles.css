@@ -206,6 +206,84 @@ select { cursor: pointer; }
   display: flex !important; flex-direction: column !important; gap: 3px !important;
 }
 
+/* ==========================================================================
+   答案解析专属高密模板 (layout-answer)
+   ========================================================================== */
+.layout-answer .questions-flow {
+  column-count: 2;
+  column-gap: 14px;
+  column-rule: 1px solid #e2e8f0;
+}
+
+/* 允许题内断行与流式跨栏，消灭整题跳页留下的巨大空白 */
+.layout-answer .question-row {
+  break-inside: auto !important;
+  page-break-inside: auto !important;
+  margin-bottom: var(--q-spacing, 4px) !important;
+  padding-bottom: 3px !important;
+  border-bottom: 0.5px dashed #cbd5e1;
+}
+
+/* 彻底隐藏所有作答留白行与空白占位 */
+.layout-answer .blank-space,
+.layout-answer .rule-blank,
+.layout-answer .answer-space,
+.layout-answer .blank-line,
+.layout-answer .fill-blank-line,
+.layout-answer .writing-area,
+.layout-answer .empty-print-spacer {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* 布局盒子与图表紧凑化 */
+.layout-answer .q-layout-box {
+  display: block;
+}
+.layout-answer .q-cell-graphic {
+  width: 100%;
+  max-width: var(--diagram-width, 100px);
+  margin: 4px auto;
+  text-align: center;
+}
+.layout-answer .q-cell-graphic svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* KaTeX 公式极致压实，消灭上下大间距 */
+.layout-answer .katex-display {
+  margin: 2px 0 !important;
+  padding: 0 !important;
+  font-size: 0.95em;
+}
+
+/* 段落文字与得分点微调 */
+.layout-answer p {
+  margin: 1.5px 0 !important;
+}
+
+.layout-answer .score-tag {
+  float: right;
+  font-size: 7.5pt;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 0 4px;
+  border-radius: 2px;
+}
+
+.layout-answer .paper-title,
+.layout-answer .section-title {
+  column-span: all;
+  break-after: avoid !important;
+  page-break-after: avoid !important;
+}
+.layout-answer .paper-title { margin-bottom: 8px; }
+.layout-answer .section-title { margin: 8px 0 4px; }
+
 .qnum-dot .q-num { font-weight: bold; }
 .qnum-bracket .q-num::before { content: "（"; }
 .qnum-bracket .q-num::after { content: "）"; }
@@ -282,7 +360,7 @@ select { cursor: pointer; }
 @keyframes toastOut { to { opacity: 0; transform: translateY(-8px); } }
 
 @media print {
-  @page { size: A4 portrait; margin: 12mm; }
+  @page { size: A4 portrait; margin: 8mm 6mm !important; }
   .app-header, .bottom-bar, #panel-edit, .preview-bar, .modal-overlay, .mistake-btn, .render-status, #toast-container { display: none !important; }
   .main-body, #panel-preview, .paper-scroller { padding: 0 !important; margin: 0 !important; max-width: none !important; width: 100% !important; overflow: visible !important; }
   div.paper-sheet, div.paper-sheet.a4-exact, div.paper-sheet.mobile-fit, div.paper-sheet.desktop-mode {
@@ -294,5 +372,11 @@ select { cursor: pointer; }
   .question-row.allow-break { break-inside: auto !important; }
   .section-title { break-after: avoid !important; }
   .layout-twocol .questions-flow { column-count: 2; }
+  
+  /* 答案解析专属打印样式：强制双栏、彻底隐藏空白行、允许跨页连续流排 */
+  .layout-answer .questions-flow { column-count: 2 !important; }
+  .layout-answer .question-row { break-inside: auto !important; page-break-inside: auto !important; }
+  .layout-answer .blank-space, .layout-answer .rule-blank { display: none !important; height: 0 !important; }
+
   .clean-mode .mistake-btn, .clean-mode .tag, .clean-mode .q-score { display: none !important; }
 }
